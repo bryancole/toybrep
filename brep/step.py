@@ -10,6 +10,10 @@ class STEPFileError(Exception):
     pass
 
 
+class EndOfSection(Exception):
+    pass
+
+
 class STEPDocument(object):
     pass
 
@@ -43,8 +47,8 @@ class STEPLoader(object):
             f = self.strip_comments(f) #strip comments
             
             firstline = f.next()
-            if not firstline=="ISO-10303-21;\n":
-                raise STEPFileError("Not a STEP ISO 10303-21 file")
+            if not firstline=="ISO-10303-21;":
+                raise STEPFileError("Not a STEP ISO 10303-21 file: %s"%firstline)
             doc = STEPDocument()
             for name, obj in self.parse_sections(iter(f.next, "END-ISO-10303-21;") ):
                 setattr(doc, name, obj)
@@ -80,44 +84,26 @@ class STEPLoader(object):
         while True:
             section_name = f.next().rsplit(";",1)[0]
             assert section_name.isupper()
+            if section_name == "DATA":
+                yield (section_name, self.parse_data(f))
+            else:
+                yield (section_name, self.parse_all(f))
             
-            for entity in self.parse_statements(iter(f.next, "ENDSEC;")):
-                #TODO
-                pass
-        
-#    def parse_statements(self, f):
-#        assign_pat = re.compile(r"^#(\d+) *= *([_A-Z])\((.+)\);$")
-#        exp_pat = re.compile(r"^(.*);\s*$")
-#        for line in f:
-#            m = re.match(assign_pat, line)
-#            if m:
-#                entity_id, entity_type, entity_args = m.groups()
-#                yield self.make_assignment(int(entity_id, entity_type, entity_args))
-#                continue
-#            m = re.match(exp_pat, line)
-#            if m:
-#                exp_data=m.groups()[0]
-#                yield self.make_expression(exp_data)
-#                continue
-            
-#    def make_expression(self, exp_data):
-#        subexp_pat = re.compile(r"^([_A-Z]*)\({(.+),}*\)$")
-#        name_pat = re.compile(r"[_A-Z]+")
-#    
-#    def make_assignment(self, eid, etype, eargs):
-#        pass
-    
-#    def parse_data(self, line_itr):
-#        def char_itr():
-#            for line in line_itr:
-#                for char in line:
-#                    yield char
-#        
-#        for stmt in self.parse_statements(char_itr()):
-#            yield stmt
+    def parse_all(self, line_itr):
+        return "".join(iter(line_itr.next, "ENDSEC;"))
+
+    def parse_data(self, line_itr):
+        data = []
+        try:
+            while True:
+                data.append(self.parse_statement(line_itr))
+        except EndOfSection:
+            return data
         
     def parse_statement(self, line_itr):
         line = line_itr.next().strip()
+        if line=="ENDSEC;":
+            raise EndOfSection
         i = line.find("=")
         if i < 0:
             raise STEPFileError("no assignment operator found: %s"%line)
