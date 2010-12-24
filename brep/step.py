@@ -6,6 +6,7 @@ Created on 22 Dec 2010
 import re
 import itertools
 from collections import defaultdict, Sequence
+import sys, time
 
 class STEPFileError(Exception):
     pass
@@ -37,21 +38,28 @@ class EntityRef(object):
 class BaseEntity(object):
     entity_classes = EntityClassDict()
     
-    def resolve(self, entity_data):
+    def resolve(self, entity_data, referenced):
         """Evaluate a fully resolved equivalent object
         """
         if isinstance(self, ResolvedEntity):
             return self
         cls = self.entity_classes[self.name]
         def resolve(obj):
-            if isinstance(obj, (ResolvedEntity, str, float, int, Star, Dollar, Const)):
+            if isinstance(obj, ResolvedEntity):
+                return obj
+            if isinstance(obj, (str, float, int, Star, Dollar, Const)):
                 return obj
             elif isinstance(obj, Sequence):
                 return type(obj)(resolve(o) for o in obj)
             elif isinstance(obj, EntityRef):
-                return resolve(entity_data[obj.eid])
+                eid = obj.eid
+                referenced.add(eid)
+                out = resolve(entity_data[eid])
+                entity_data[eid] = out
+                return out
             elif isinstance(obj, UnresolvedEntity):
-                return obj.resolve(entity_data)
+                out = obj.resolve(entity_data, referenced)
+                return out
             else:
                 raise STEPFileError("What's a %s ?"%str(obj))
         args = [resolve(o) for o in self.args]
@@ -64,14 +72,15 @@ class BaseEntity(object):
         return inst
     
     
-class ResolvedEntity(object):
+class ResolvedEntity(BaseEntity):
     pass
     
     
 class DumbEntity(ResolvedEntity):
-    __slots__ = ['args','eid']
+    __slots__ = ['args','eid', 'refcount']
     def __init__(self, *args):
         self.args = args
+        self.refcount = 0
         
     def __repr__(self):
         return "%s<%s>"%(self.__class__.__name__, ",".join("#%d"%o.eid if hasattr(o, "eid") else str(o) 
@@ -115,6 +124,7 @@ class STEPLoader(object):
         self.filename = filename
         
     def parse_document(self):
+        start = time.time()
         with open(self.filename, 'rb') as fobj:
             f = (l for l in fobj if l) #drop blank lines
             f = self.strip_comments(f) #strip comments
@@ -125,18 +135,31 @@ class STEPLoader(object):
             doc = STEPDocument()
             for name, obj in self.parse_sections(iter(f.next, "END-ISO-10303-21;") ):
                 setattr(doc, name, obj)
-                
-            data = doc.DATA
-            entities = data.keys()
-            def resolve(obj):
-                if isinstance(obj, Sequence):
-                    return type(obj)(resolve(o) for o in obj)
-                else:
-                    return obj.resolve(data)
-            
-            for eid in entities:
-                data[eid] = resolve(data[eid])
-            return doc
+        data = doc.DATA
+        now = time.time()
+        print "Read %d entities in %g seconds"%(len(data), now-start)
+        entities = data.keys()
+        referenced = set()
+        def resolve(obj):
+            if isinstance(obj, Sequence):
+                return type(obj)(resolve(o) for o in obj)
+            else:
+                try:
+                    return obj.resolve(data, referenced)
+                except AttributeError:
+                    print type(obj)
+                    raise
+        total = len(entities)
+        for i, eid in enumerate(entities):
+            if not i%10:
+                print "Counted", i
+            data[eid] = resolve(data[eid])
+        now2 = time.time()
+        print "Resolved all references in %g seconds"%(now2-now)    
+        free_items = [o for k,o in ((k,data[k]) for k in data) if k not in referenced]
+        doc.free_items = free_items
+        print "Found free entities in %g seconds"%(time.time()-now2)
+        return doc
         
     @staticmethod
     def strip_comments(line_itr):
