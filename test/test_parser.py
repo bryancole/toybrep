@@ -9,5 +9,5 @@ doc = loader.parse_document()
 
 print doc.HEADER
 
-for item in doc.DATA:
-    print item
+for item, val in doc.DATA.items():
+    print item, val

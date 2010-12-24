@@ -5,6 +5,7 @@ Created on 22 Dec 2010
 '''
 import re
 import itertools
+from collections import defaultdict, Sequence
 
 class STEPFileError(Exception):
     pass
@@ -18,6 +19,12 @@ class STEPDocument(object):
     pass
 
 
+class EntityClassDict(defaultdict):
+    def __missing__(self, key):
+        cls = type(key, (DumbEntity,), {})
+        return cls
+
+
 class EntityRef(object):
     __slots__= ['eid']
     def __init__(self, val):
@@ -25,16 +32,82 @@ class EntityRef(object):
         
     def __repr__(self):
         return "Ref#%d"%self.eid
+      
+      
+class BaseEntity(object):
+    entity_classes = EntityClassDict()
+    
+    def resolve(self, entity_data):
+        """Evaluate a fully resolved equivalent object
+        """
+        if isinstance(self, ResolvedEntity):
+            return self
+        cls = self.entity_classes[self.name]
+        def resolve(obj):
+            if isinstance(obj, (ResolvedEntity, str, float, int, Star, Dollar, Const)):
+                return obj
+            elif isinstance(obj, Sequence):
+                return type(obj)(resolve(o) for o in obj)
+            elif isinstance(obj, EntityRef):
+                return resolve(entity_data[obj.eid])
+            elif isinstance(obj, UnresolvedEntity):
+                return obj.resolve(entity_data)
+            else:
+                raise STEPFileError("What's a %s ?"%str(obj))
+        args = [resolve(o) for o in self.args]
+        inst = cls(*args)
+        try:
+            inst.eid = self.eid
+        except AttributeError:
+            #print "failed on", self
+            pass
+        return inst
+    
+    
+class ResolvedEntity(object):
+    pass
+    
+    
+class DumbEntity(ResolvedEntity):
+    __slots__ = ['args','eid']
+    def __init__(self, *args):
+        self.args = args
+        
+    def __repr__(self):
+        return "%s<%s>"%(self.__class__.__name__, ",".join("#%d"%o.eid if hasattr(o, "eid") else str(o) 
+                                                           for o in self.args))
         
         
-class Entity(object):
-    __slots__ = ['name', 'args']
+class UnresolvedEntity(BaseEntity):
+    __slots__ = ['name', 'args', 'eid']
     def __init__(self, name, args):
         self.name = name
         self.args = args
         
     def __repr__(self):
         return "Entity[%s...%s]"%(self.name, str(self.args))
+    
+    
+        
+###Dunno the meaning of these two yet...
+class Star(BaseEntity):
+    __slots__ = []
+    def __repr__(self):
+        return "*"
+    
+class Dollar(BaseEntity):
+    __slots__ = []
+    def __repr__(self):
+        return "$"
+###
+    
+class Const(BaseEntity):
+    __slots__ = ['name']
+    def __init__(self, text):
+        self.name = text.strip('.').upper()
+        
+    def __repr__(self):
+        return self.name
 
 
 class STEPLoader(object):
@@ -52,6 +125,17 @@ class STEPLoader(object):
             doc = STEPDocument()
             for name, obj in self.parse_sections(iter(f.next, "END-ISO-10303-21;") ):
                 setattr(doc, name, obj)
+                
+            data = doc.DATA
+            entities = data.keys()
+            def resolve(obj):
+                if isinstance(obj, Sequence):
+                    return type(obj)(resolve(o) for o in obj)
+                else:
+                    return obj.resolve(data)
+            
+            for eid in entities:
+                data[eid] = resolve(data[eid])
             return doc
         
     @staticmethod
@@ -93,12 +177,20 @@ class STEPLoader(object):
         return "".join(iter(line_itr.next, "ENDSEC;"))
 
     def parse_data(self, line_itr):
-        data = []
+        data = {}
         try:
             while True:
-                data.append(self.parse_statement(line_itr))
+                name, expression = self.parse_statement(line_itr)
+                data[name] = expression
+                try:
+                    expression.eid = name
+                except AttributeError:
+                    pass #fails on tuples
         except EndOfSection:
             return data
+        
+    def resolve_expression(self, data):
+        pass
         
     def parse_statement(self, line_itr):
         line = line_itr.next().strip()
@@ -170,10 +262,27 @@ class STEPLoader(object):
                 return ""
             else:
                 return tuple(args)
-        if text[0]=="#":
+        first = text[0]
+        if first=="#":
             return EntityRef(text[1:])
+        elif first.isalpha():
+            return UnresolvedEntity(text, args)
+        elif first==".":
+            if text == ".T.":
+                return True
+            elif text == ".F.":
+                return False
+            else:
+                return Const(text)
+        elif first=="*":
+            return Star()
+        elif first=="$":
+            return Dollar()
         else:
-            return Entity(text, args)
+            try:
+                return float(text)
+            except ValueError:
+                raise STEPFileError("Can't convert '%s' to a value"%text)
             
                 
         
