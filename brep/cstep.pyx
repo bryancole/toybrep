@@ -1,6 +1,6 @@
 
 
-from collections import defaultdict
+from collections import defaultdict, Counter
 import gc
 
 cdef int total
@@ -11,6 +11,9 @@ class EntityClassDict(defaultdict):
         cls = type(key, (DumbEntity,), {})
         self[key] = cls
         return cls
+
+
+entity_classes = EntityClassDict()
 
 
 cdef class EntityRef(object):
@@ -31,12 +34,33 @@ cdef class ResolvedEntity(BaseEntity):
     pass
     
     
+cdef class CartesianPoint(ResolvedEntity):
+    cdef:
+        public int eid
+        public char *name
+        public double x, y, z
+        
+    def __init__(self, char *name, args):
+        self.name = name
+        try:
+            self.x, self.y, self.z = args
+        except ValueError:
+            raise ValueError("Can't unpack to triple: %s"%str(args))
+            
+entity_classes['CARTESIAN_POINT'] = CartesianPoint        
+        
+
+cdef class Direction(CartesianPoint):
+    pass
+entity_classes['DIRECTION'] = Direction
+    
+    
 cdef class DumbEntity(ResolvedEntity):
     cdef:
         public int eid
         public tuple args
         
-    def __cinit__(self, *args):
+    def __init__(self, *args):
         self.args = args
         
     def __repr__(self):
@@ -79,36 +103,56 @@ cdef class Const(ResolvedEntity):
         return self.name
         
         
-entity_classes = EntityClassDict()
+counter = Counter()
         
-        
-Placeholder = ResolvedEntity()
 
-        
-cdef object resolve(obj, dict data):
+#cdef object resolve(obj, dict data):        
+def resolve(obj, data, free_set=None):
     cdef int eid
-    global total, entity_classes
+    global total, entity_classes, counter
                  
     if isinstance(obj, ResolvedEntity):
         return obj
         
+    if free_set is None:
+        free_set = set()
+        
     elif isinstance(obj, UnresolvedEntity):
         eid = obj.eid
-        #data[eid] = Placeholder
-        args = [resolve(o, data) for o in obj.args]
+        args = [resolve(o, data, free_set) for o in obj.args]
         
+        counter[obj] += 1
         cls = entity_classes[obj.name]
-        inst = cls(*args)
         
+        inst = cls.__new__(cls)
         data[eid] = inst
+        
+        try:
+            inst.__init__(*args)
+        except TypeError:
+            del data[eid]
+            raise TypeError("Error creating #%d = %s with args: %s"%(eid, str(cls), str(args)))
+        except:
+            del data[eid]
+            raise
+            
+        inst.eid = eid
+        
+        if isinstance(inst, UnresolvedEntity):
+            raise ValueError("this cannot be!")
+        
+        free_set.add(inst)
+        
         total += 1
         return inst
         
     elif isinstance(obj, EntityRef):
-        return resolve(data[obj.eid], data)
+        obj = resolve(data[obj.eid], data, free_set)
+        free_set.discard(obj)
+        return obj
         
     elif isinstance(obj, (tuple, list)):
-        return tuple([resolve(o, data) for o in obj])
+        return tuple([resolve(o, data, free_set) for o in obj])
         
     else:
         return obj #must be a float, int, string etc.
@@ -122,12 +166,22 @@ def resolve_doc(step_doc):
     
     print len(entities), "entities"
     
+    free_set = set()
+    
     for eid in entities:
         obj = data[eid]
-        resolve(obj, data)
+        resolve(obj, data, free_set)
         count += 1
         if (count % 1000) == 0:
             print "resolved: ", count, "and", total
     
     print "classes:", len(entity_classes)
+    print "most common:", counter.most_common(10)
+    
+    root_items = set( o for o in free_set if o.eid>0 )
+    rest = free_set.difference(root_items)
+    
+    return root_items, rest
+        
+
     

@@ -5,11 +5,12 @@ Created on 22 Dec 2010
 '''
 import re
 import itertools
-from collections import defaultdict, Sequence
+from collections import defaultdict, Sequence, Counter
 import sys, time
 
 import pyximport; pyximport.install()
 from cstep import Star, Dollar, Const, EntityRef, resolve_doc, UnresolvedEntity
+from brep.topo import BrepSolid
 
 
 class STEPFileError(Exception):
@@ -21,7 +22,13 @@ class EndOfSection(Exception):
 
 
 class STEPDocument(object):
-    pass
+    @property
+    def manifold_solids(self):
+        solid_reps = (o for o in self.roots if type(o).__name__=="SHAPE_REPRESENTATION_RELATIONSHIP")
+        level1 = itertools.chain.from_iterable(o.args for o in solid_reps if hasattr(o, 'args'))
+        level2 = itertools.chain.from_iterable(o.args for o in level1 if hasattr(o, 'args'))
+        level3 = itertools.chain.from_iterable( o if isinstance(o, Sequence) else (o,) for o in level2)
+        return set(s for s in level3 if isinstance(s, BrepSolid))
 
 
 
@@ -45,13 +52,12 @@ class STEPLoader(object):
         now = time.time()
         print "Read %d entities in %g seconds"%(len(data), now-start)
         
-        resolve_doc(doc)
+        roots, other = resolve_doc(doc)
+        doc.roots = roots
+        doc.other = other
         
         now2 = time.time()
         print "Resolved all references in %g seconds"%(now2-now)    
-        free_items = [o for k,o in ((k,data[k]) for k in data) if k not in referenced]
-        doc.free_items = free_items
-        print "Found free entities in %g seconds"%(time.time()-now2)
         return doc
         
     @staticmethod
@@ -146,8 +152,9 @@ class STEPLoader(object):
         this = []
         for char in chars:
             if char == ')':
-                out.append( self.make_entity(''.join(this), 
-                                             None) )
+                txt = ''.join(this).strip()
+                if len(txt)>0:
+                    out.append( self.make_entity(txt, None) )
                 return tuple(out)
             if char in (',', '\n'):
                 if this:
@@ -157,13 +164,13 @@ class STEPLoader(object):
                 this=[]
                 continue
             if char == '(':
-                out.append(self.make_entity(''.join(this), 
-                                            self.parse_tuple(chars))
-                            )
+                txt = ''.join(this).strip()
+                out.append(self.make_entity(txt, self.parse_tuple(chars)))
                 this = []
                 continue
             if char == "'":
                 out.append(self.parse_string(chars))
+                this=[]
                 continue
             this.append(char)
             
