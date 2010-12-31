@@ -2,7 +2,7 @@
 from brep.step import STEPLoader
 
 testdata = "../step_data/two_blocks.stp"
-testdata = "../step_data/TDR_step/TPR_beta_design_13-5-10.STEP"
+#testdata = "../step_data/TDR_step/TPR_beta_design_13-5-10.STEP"
 
 loader = STEPLoader(testdata)
 
