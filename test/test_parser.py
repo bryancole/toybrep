@@ -3,7 +3,7 @@ from brep.step import STEPLoader
 
 #testdata = "../step_data/two_blocks.stp"
 testdata = "../step_data/cut_cube.stp"
-#testdata = "../step_data/block_with_hole.stp"
+#testdata = "../step_data/multi_holes.stp"
 #testdata = "../step_data/TDR_step/TPR_beta_design_13-5-10.STEP"
 
 loader = STEPLoader(testdata)
