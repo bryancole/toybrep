@@ -29,8 +29,8 @@ class BrepSolid(ResolvedEntity):
         copy = self.copy_topology()
         shell = copy.shell
         shell.tesselate(tolerance=0.001)
-        verts = list(shell.vertices())
-        point_map = dict((p,i) for i,p in enumerate(verts))
+        verts = list(set(shell.vertices()))
+        point_map = dict((v,i) for i,v in enumerate(verts))
         cells = [[point_map[v] for v in face.vertices()] for face in shell.faces]
         points = [tuple(v) for v in verts]
         return points, cells
@@ -154,6 +154,13 @@ class EdgeLoop(Loop):
             print tuple(oe.subedge.eid for oe in edge_list)
             raise
         
+    def divide(self, start_vertex, end_vertex, curve):
+        """Creates a new edge between the given vertices
+        to divide the loop in two. The new loop is returned.
+        curve - the geometry to be associated with the new edge
+        """
+        
+        
         
     def copy_topology(self, memo):
         if self in memo:
@@ -181,24 +188,16 @@ class EdgeLoop(Loop):
             
     def vertices(self):
         this = base = self.base_edge
-        if this.right_loop is self:
-            v = this.start_vertex
-        else:
-            v = this.end_vertex
-        yield v
         while True:
             if this.right_loop is self:
+                yield this.start_vertex
                 this = this.right_cw_edge
-                if this is base:
-                    break
-                if this:
-                    yield this.start_vertex
             else:
+                yield this.end_vertex
                 this = this.left_cw_edge
-                if this is base:
+            if this is base:
                     break
-                if this:
-                    yield this.end_vertex
+                    
 
             
 

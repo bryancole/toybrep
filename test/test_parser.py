@@ -1,7 +1,9 @@
 
 from brep.step import STEPLoader
 
-testdata = "../step_data/two_blocks.stp"
+#testdata = "../step_data/two_blocks.stp"
+testdata = "../step_data/cut_cube.stp"
+#testdata = "../step_data/block_with_hole.stp"
 #testdata = "../step_data/TDR_step/TPR_beta_design_13-5-10.STEP"
 
 loader = STEPLoader(testdata)
@@ -23,12 +25,16 @@ solid = doc.manifold_solids.pop()
 print "edges>", len(solid.edges)
 print "verts>", len(solid.vertices)
 
-s2 = solid.copy_topology()
+#s2 = solid.copy_topology()
+#
+#print "edges>", len(s2.edges)
+#print "verts>", len(s2.vertices)
+#
+print solid.as_polydata()
 
-print "edges>", len(s2.edges)
-print "verts>", len(s2.vertices)
+from brep.display import show_solid
 
-print s2.as_polydata()
+show_solid(solid)
 
 #print "edges", len(s2.edges())
 #for item, val in doc.DATA.items():
