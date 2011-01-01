@@ -28,6 +28,8 @@ s2 = solid.copy_topology()
 print "edges>", len(s2.edges)
 print "verts>", len(s2.vertices)
 
+print s2.as_polydata()
+
 #print "edges", len(s2.edges())
 #for item, val in doc.DATA.items():
 #    print item, val

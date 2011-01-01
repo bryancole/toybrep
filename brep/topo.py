@@ -31,6 +31,16 @@ class BrepSolid(ResolvedEntity):
         memo = {}
         shell = self.shell.copy_topology(memo)
         return BrepSolid("", shell)
+    
+    def as_polydata(self):
+        copy = self.copy_topology()
+        shell = copy.shell
+        shell.tesselate(tolerance=0.001)
+        verts = list(shell.vertices())
+        point_map = dict((p,i) for i,p in enumerate(verts))
+        cells = [[point_map[v] for v in face.vertices()] for face in shell.faces]
+        points = [tuple(v) for v in verts]
+        return points, cells
         
         
 @step_type("CLOSED_SHELL")
@@ -56,6 +66,9 @@ class ClosedShell(ResolvedEntity):
         for face in self.faces:
             for vert in face.vertices():
                 yield vert 
+                
+    def tesselate(self, tolerance=0.001):
+        pass
         
         
 @step_type("ADVANCED_FACE")
@@ -263,3 +276,5 @@ class Vertex(ResolvedEntity):
         memo[self] = copy
         return copy
     
+    def __getitem__(self, idx):
+        return self.point[idx]

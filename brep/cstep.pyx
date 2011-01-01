@@ -47,6 +47,16 @@ cdef class CartesianPoint(ResolvedEntity):
         except ValueError:
             raise ValueError("Can't unpack to triple: %s"%str(args))
             
+    def __getitem__(self, int idx):
+        if idx==0:
+            return self.x
+        elif idx==1:
+            return self.y
+        elif idx==2:
+            return self.z
+        else:
+            raise IndexError("No index %s in CartesianPoint"%idx )
+            
 entity_classes['CARTESIAN_POINT'] = CartesianPoint        
         
 
