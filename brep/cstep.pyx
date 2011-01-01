@@ -6,6 +6,14 @@ import gc
 cdef int total
 
 
+def step_type(name):
+    def wrapper(cls):
+        entity_classes[name] = cls
+        cls.step_type = name
+        return cls
+    return wrapper
+
+
 class EntityClassDict(defaultdict):
     def __missing__(self, key):
         cls = type(key, (DumbEntity,), {})

@@ -11,6 +11,7 @@ import sys, time
 import pyximport; pyximport.install()
 from cstep import Star, Dollar, Const, EntityRef, resolve_doc, UnresolvedEntity
 from brep.topo import BrepSolid
+from brep import geom
 
 
 class STEPFileError(Exception):

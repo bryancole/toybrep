@@ -4,17 +4,10 @@ Created on 21 Dec 2010
 @author: bryan cole
 '''
 import pyximport; pyximport.install()
-from cstep import ResolvedEntity, entity_classes, CartesianPoint, Star
+from cstep import ResolvedEntity, entity_classes, CartesianPoint, Star, step_type
 from weakref import proxy, WeakSet
 
 from collections import defaultdict
-
-def step_type(name):
-    def wrapper(cls):
-        entity_classes[name] = cls
-        cls.step_type = name
-        return cls
-    return wrapper
 
 
 @step_type("MANIFOLD_SOLID_BREP")
@@ -57,6 +50,10 @@ class ClosedShell(ResolvedEntity):
             memo[self] = copy
             return copy
         
+    def tesselate(self, tolerance=0.001):
+        for face in self.faces:
+            face.tesselate(tolerance)
+        
     def edges(self):
         for face in self.faces:
             for edge in face.edges():
@@ -66,9 +63,6 @@ class ClosedShell(ResolvedEntity):
         for face in self.faces:
             for vert in face.vertices():
                 yield vert 
-                
-    def tesselate(self, tolerance=0.001):
-        pass
         
         
 @step_type("ADVANCED_FACE")
@@ -78,6 +72,9 @@ class AdvancedFace(ResolvedEntity):
         self.bounds = set(bounds)
         self.geometry = geometry
         self.sense = bool(sense)
+        
+    def tesselate(self, tolerance=0.001):
+        self.geometry.tesselate_face(self.bounds)
         
     def copy_topology(self, memo):
         if self in memo:
