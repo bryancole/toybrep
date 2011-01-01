@@ -7,6 +7,8 @@ import pyximport; pyximport.install()
 from cstep import ResolvedEntity, entity_classes, CartesianPoint, Star
 from weakref import proxy, WeakSet
 
+from collections import defaultdict
+
 def step_type(name):
     def wrapper(cls):
         entity_classes[name] = cls
@@ -25,12 +27,25 @@ class BrepSolid(ResolvedEntity):
         self.vertices = WeakSet(shell.vertices())
         self.edges = WeakSet(shell.edges())
         
+    def copy_topology(self):
+        memo = {}
+        shell = self.shell.copy_topology(memo)
+        return BrepSolid("", shell)
+        
         
 @step_type("CLOSED_SHELL")
 class ClosedShell(ResolvedEntity):
     def __init__(self, name, faces):
         self.name = name
         self.faces = set(faces)
+        
+    def copy_topology(self, memo):
+        if self in memo:
+            return memo[self]
+        else:
+            copy = ClosedShell("", set(f.copy_topology(memo) for f in self.faces))
+            memo[self] = copy
+            return copy
         
     def edges(self):
         for face in self.faces:
@@ -51,6 +66,18 @@ class AdvancedFace(ResolvedEntity):
         self.geometry = geometry
         self.sense = bool(sense)
         
+    def copy_topology(self, memo):
+        if self in memo:
+            return memo[self]
+        else:
+            copy =  AdvancedFace("",
+                                set(b.copy_topology(memo) for b in self.bounds),
+                                self.geometry,
+                                self.sense
+                                )
+            memo[self] = copy
+            return copy
+        
     def edges(self):
         for bound in self.bounds:
             for edge in bound.bound.edges():
@@ -68,6 +95,16 @@ class FaceBound(ResolvedEntity):
         self.name = name
         self.bound = bound #a Loop object
         self.orientation = bool(orientation)
+        
+    def copy_topology(self, memo):
+        if self in memo:
+            return memo[self]
+        else:
+            copy = type(self)("", 
+                              self.bound.copy_topology(memo),
+                              self.orientation)
+            memo[self] = copy
+            return copy
 
         
 @step_type("FACE_OUTER_BOUND")
@@ -106,6 +143,18 @@ class EdgeLoop(Loop):
             print tuple(e.eid for e in self.edges())
             print tuple(oe.subedge.eid for oe in edge_list)
             raise
+        
+        
+    def copy_topology(self, memo):
+        if self in memo:
+            return memo[self]
+        else:
+            copy = EdgeLoop.__new__(EdgeLoop)
+            super(EdgeLoop, copy).__init__("")
+            memo[self] = copy
+            edges = [e.copy_topology(memo) for e in self.edges()]
+            copy.base_edge = memo[self.base_edge]
+            return copy
                 
                 
     def edges(self):
@@ -130,13 +179,17 @@ class EdgeLoop(Loop):
         while True:
             if this.right_loop is self:
                 this = this.right_cw_edge
-                v = this.start_vertex
+                if this is base:
+                    break
+                if this:
+                    yield this.start_vertex
             else:
                 this = this.left_cw_edge
-                v = this.end_vertex
-            if this is base:
-                break
-            yield v
+                if this is base:
+                    break
+                if this:
+                    yield this.end_vertex
+
             
 
 @step_type("EGDE")
@@ -175,6 +228,23 @@ class EdgeCurve(Edge):
         self.right_cc_edge = None
         self.right_cw_edge = None
         
+    def copy_topology(self, memo):
+        if self in memo:
+            return memo[self]
+        copy = EdgeCurve("",
+                         self.start_vertex.copy_topology(memo),
+                         self.end_vertex.copy_topology(memo),
+                         self.curve,
+                         self.sense)
+        memo[self] = copy
+        copy.left_loop = self.left_loop.copy_topology(memo) 
+        copy.right_loop = self.right_loop.copy_topology(memo)
+        copy.left_cc_edge = self.left_cc_edge.copy_topology(memo)
+        copy.left_cw_edge = self.left_cw_edge.copy_topology(memo)
+        copy.right_cc_edge = self.right_cc_edge.copy_topology(memo)
+        copy.right_cw_edge = self.right_cw_edge.copy_topology(memo)
+        return copy
+        
 
 @step_type("VERTEX_POINT")  
 class Vertex(ResolvedEntity):
@@ -185,3 +255,11 @@ class Vertex(ResolvedEntity):
             self.point = CartesianPoint('', *point)
         else:
             self.point = point
+
+    def copy_topology(self, memo):
+        if self in memo:
+            return memo[self]
+        copy = Vertex("", self.point)
+        memo[self] = copy
+        return copy
+    
