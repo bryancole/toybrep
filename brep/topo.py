@@ -237,6 +237,40 @@ class EdgeCurve(Edge):
         self.right_cc_edge = None
         self.right_cw_edge = None
         
+    def split(self, point):
+        """Subdivide this edge at the given point.
+        No checking is performed to verify if the point lies on the curve
+        The new vertex and edge are returned
+        """
+        vertex = Vertex("", point)
+        edge = EdgeCurve("", vertex, self.end_vertex, self.curve, self.sense)
+        edge.left_loop = self.left_loop
+        edge.right_loop = self.right_loop
+        edge.left_cc_edge = self.left_cc_edge
+        edge.right_cw_edge = self.right_cw_edge
+        edge.left_cw_edge = self
+        edge.right_cc_edge = self
+        
+        left_cc_edge = self.left_cc_edge #need to update the adjacent edges
+        if left_cc_edge.start_vertex == edge.end_vertex:
+            left_cc_edge.left_cw_edge = edge
+        else:
+            left_cc_edge.right_cw_edge = edge
+            
+        right_cw_edge = self.right_cw_edge
+        if right_cw_edge.start_vertex == edge.end_vertex:
+            right_cw_edge.right_cc_edge = edge
+        else:
+            right_cw_edge.left_cc_edge = edge
+        
+        self.left_cc_edge = edge
+        self.right_cw_edge = edge
+        self.end_vertex = vertex
+        return vertex, edge
+        
+    def tesselate(self, tolerance=0.001):
+        self.curve.tesselate(self, tolerance)
+        
     def copy_topology(self, memo):
         if self in memo:
             return memo[self]
@@ -261,7 +295,7 @@ class Vertex(ResolvedEntity):
         self.name = name
         if not isinstance(point, CartesianPoint):
             print "make point", type(point)
-            self.point = CartesianPoint('', *point)
+            self.point = CartesianPoint('', point)
         else:
             self.point = point
 

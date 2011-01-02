@@ -34,6 +34,12 @@ print solid.as_polydata()
 
 from brep.display import show_solid
 
+edges = set(solid.shell.edges())
+
+for edge in edges:
+    pt = ((a+b)/2. for a,b in zip(edge.start_vertex, edge.end_vertex))
+    edge.split(pt)
+
 show_solid(solid)
 
 #print "edges", len(s2.edges())

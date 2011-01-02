@@ -32,6 +32,15 @@ class Line(Curve):
         self.name = name
         self.origin = origin
         self.vector = vector
+        
+
+@step_type("CIRCLE")
+class Circle(Curve):
+    def __init__(self, name, position, radius):
+        self.name = name
+        assert isinstance(position, Axis2Placement3D)
+        self.position = position #a axis2_placement: usually an Axis2Placement3D
+        self.radius = radius #a positive float
     
     
 @step_type("PLANE")
@@ -43,6 +52,14 @@ class Plane(Surface):
         
     def tesselate_face(self, face):
         pass
+    
+    
+@step_type("CYLINDERICAL_SURFACE")
+class CylindericalSurface(Surface):
+    def __init__(self, name, position, radius):
+        self.name = name
+        self.position = position #an Axis2Placement3d
+        self.radius = radius #a positive float
         
 
 @step_type("AXIS2_PLACEMENT_3D")
