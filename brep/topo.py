@@ -268,8 +268,8 @@ class EdgeCurve(Edge):
         self.end_vertex = vertex
         return vertex, edge
         
-    def tesselate(self, tolerance=0.001):
-        self.curve.tesselate(self, tolerance)
+    def tesselate(self):
+        self.curve.tesselate(self)
         
     def copy_topology(self, memo):
         if self in memo:

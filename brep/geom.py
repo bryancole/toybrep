@@ -5,6 +5,36 @@ Created on 21 Dec 2010
 '''
 import pyximport; pyximport.install()
 from cstep import ResolvedEntity, entity_classes, CartesianPoint, Star, step_type, Direction
+from math import sqrt, cos, sin
+
+
+def rotate_point(point, origin, direction, angle):
+    '''
+    rotates points about the given axis by the given angle
+    returns a list of CartesianPoint instances
+    
+    @param points: a 3-sequences
+    @param origin: 3-sequence giving the location
+    @param direction: 3-sequence giving the axis direction
+    @param angle: rotate angle in radians
+    '''
+    x,y,z = point
+    a,b,c = origin
+    u,v,w = direction
+    L = u*u + v*v + w*w
+    cosA = cos(angle)
+    sinA = sin(angle)
+    
+    X = ( a*(v*v + w*w) + u*(-b*v - c*w + u*x + v*y + w*z) \
+          + (-a*(v*v + w*w) + u*(b*v + c*w - v*y - w*z) + (v*v + w*w)*x )*cosA \
+          + sqrt(L)*(-c*v + b*w - w*y + v*z)*sinA \
+        ) / L
+        
+    Y = ( b*(u*u + w*w) + v*(-a*u - c*w + u*x + v*y + w*z) \
+          + (-b*(u*u + w*w) + v*(a*u + c*w - u*x - w*z) + (u*u + w*w)*y )*cosA \
+          + sqrt(L)*(c*u - a*w + w*x - u*z)*sinA \
+        ) / L
+    
         
 
 @step_type("VECTOR")
@@ -17,6 +47,8 @@ class Vector(ResolvedEntity):
 
 class Curve(ResolvedEntity):
     """ABC for 1D geometry"""
+    def tesselate(self, edge):
+        pass
     
     
 class Surface(ResolvedEntity):
@@ -41,6 +73,12 @@ class Circle(Curve):
         assert isinstance(position, Axis2Placement3D)
         self.position = position #a axis2_placement: usually an Axis2Placement3D
         self.radius = radius #a positive float
+        
+    def tesselate(self, edge):
+        start = edge.start_vertex.point
+        end = edge.end_vertex.point
+        sense = edge.sense
+        
     
     
 @step_type("PLANE")
