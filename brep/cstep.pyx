@@ -6,6 +6,12 @@ import gc
 cdef int total
 
 
+cdef inline aspoint(obj):
+    if isinstance(obj, CartesianPoint):
+        return obj
+    return CartesianPoint(obj)
+
+
 def step_type(name):
     def wrapper(cls):
         entity_classes[name] = cls
@@ -64,6 +70,34 @@ cdef class CartesianPoint(ResolvedEntity):
             return self.z
         else:
             raise IndexError("No index %s in CartesianPoint"%idx )
+            
+    def __add__(self, other):
+        other = aspoint(other)
+        ret = CartesianPoint.__new__(CartesianPoint)
+        ret.x = self.x + other.x
+        ret.y = self.y + other.y
+        ret.z = self.z + other.z
+        return ret
+        
+    def __sub__(self, other):
+        other = aspoint(other)
+        ret = CartesianPoint.__new__(CartesianPoint)
+        ret.x = self.x - other.x
+        ret.y = self.y - other.y
+        ret.z = self.z - other.z
+        return ret    
+        
+    def dot(self, other):
+        other = aspoint(other)
+        return self.x*other.x + self.y*other.y + self.z+other.z
+        
+    def cross(self, other):
+        other = aspoint(other)
+        ret = CartesianPoint.__new__(CartesianPoint)
+        ret.x = self.y*other.z - self.z*other.y
+        ret.y = other.x*self.z - other.z*self.x
+        ret.z = self.x*other.y - self.y*other.x
+        
             
 entity_classes['CARTESIAN_POINT'] = CartesianPoint        
         
