@@ -34,6 +34,17 @@ class BrepSolid(ResolvedEntity):
         cells = [[point_map[v] for v in face.vertices()] for face in shell.faces]
         points = [tuple(v) for v in verts]
         return points, cells
+    
+    def as_wireframe(self):
+        copy = self.copy_topology()
+        shell = copy.shell
+        shell.tesselate_edges()
+        verts = list(set(shell.vertices()))
+        point_map = dict((v,i) for i,v in enumerate(verts))
+        edges = set(shell.edges())
+        cells = [(point_map[e.start_vertex], point_map[e.end_vertex]) for e in edges]
+        points = [tuple(v) for v in verts]
+        return points, cells
         
         
 @step_type("CLOSED_SHELL")
@@ -53,6 +64,11 @@ class ClosedShell(ResolvedEntity):
     def tesselate(self, tolerance=0.001):
         for face in self.faces:
             face.tesselate(tolerance)
+            
+    def tesselate_edges(self):
+        edges = set(self.edges())
+        for e in edges:
+            e.tesselate()
         
     def edges(self):
         for face in self.faces:

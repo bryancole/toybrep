@@ -5,7 +5,11 @@ Created on 21 Dec 2010
 '''
 import pyximport; pyximport.install()
 from cstep import ResolvedEntity, entity_classes, CartesianPoint, Star, step_type, Direction
-from math import sqrt, cos, sin
+from math import sqrt, cos, sin, pi, acos, asin, ceil
+from brep.transforms import Transform
+
+
+ARC_RESOLUTION = 2*pi/128.
 
 
 def rotate_point(point, origin, direction, angle):
@@ -65,6 +69,9 @@ class Line(Curve):
         self.origin = origin
         self.vector = vector
         
+    def tesselate(self, edge):
+        pass
+        
 
 @step_type("CIRCLE")
 class Circle(Curve):
@@ -77,8 +84,43 @@ class Circle(Curve):
     def tesselate(self, edge):
         start = edge.start_vertex.point
         end = edge.end_vertex.point
+        print "TESS", start, end
         sense = edge.sense
         
+        centre = self.position.location
+        axis = self.position.axis.unit()
+        
+        print "TESS", start, end, centre, axis
+        #get angle round the arc
+        v1 = (start - centre).unit()
+        v2 = (end - centre).unit()
+        
+        cp = v1.cross(v2).dot(axis)
+        dp = v1.dot(v2)
+        
+        if dp**2 < 0.5:
+            theta = acos(dp)
+            if cp < 0:
+                theta = 2*pi - theta
+        else:
+            theta = asin(cp)
+            if dp < 0:
+                theta = pi - theta
+                
+        nsegments = ceil(theta/ARC_RESOLUTION)
+        dtheta = theta / nsegments
+        
+        T = Transform()
+        T.rotate_axis(centre, axis, dtheta)
+        
+        new_points = []
+        pt = start
+        for i in xrange(int(nsegments)-1):
+            pt = CartesianPoint("", T.transform_point(pt))
+            new_points.append(pt)
+            
+        for pt in reversed(new_points):
+            edge.split(pt)
     
     
 @step_type("PLANE")
@@ -105,6 +147,6 @@ class Axis2Placement3D(ResolvedEntity):
     def __init__(self, name, location, axis, ref_direction):
         self.name = name
         self.location = location # a CartesianPoint
-        self.axes = axis #a Direction
+        self.axis = axis #a Direction
         self.ref_direction = ref_direction #a Direction
         

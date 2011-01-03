@@ -5,8 +5,11 @@ Routines for viewing Brep solids etc.
 import vtk
 
 
-def show_solid(solid):
-    points, cells = solid.as_polydata()
+def show_solid(solid, wireframe=False, show_vertex_ids=False):
+    if wireframe:
+        points, cells = solid.as_wireframe()
+    else:
+        points, cells = solid.as_polydata()
     
     pd = vtk.vtkPolyData()
     
@@ -24,7 +27,10 @@ def show_solid(solid):
             print id,
         print
             
-    pd.SetPolys(ca)
+    if wireframe:
+        pd.SetLines(ca)
+    else:
+        pd.SetPolys(ca)
     
     tri = vtk.vtkTriangleFilter()
     tri.SetInput(pd)
@@ -55,7 +61,8 @@ def show_solid(solid):
     pointLabels = vtk.vtkActor2D()
     pointLabels.SetMapper(ldm)
     
-    ren.AddActor2D(pointLabels)
+    if show_vertex_ids:
+        ren.AddActor2D(pointLabels)
     
     renwin = vtk.vtkRenderWindow()
     renwin.AddRenderer(ren)

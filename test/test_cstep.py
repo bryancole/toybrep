@@ -19,6 +19,7 @@ class TestCartesianPoint(unittest.TestCase):
         p1 = CartesianPoint('', (1,2,3))
         p2 = CartesianPoint("", (4,5,6))
         p3 = p1 - p2
+        print p3.name
         self.assertEquals(tuple(p3), (-3,-3,-3))
         
 

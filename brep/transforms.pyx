@@ -65,6 +65,13 @@ cdef class Transform:
             out.append((p.x, p.y, p.z))
         return out
         
+    def transform_point(self, p1):
+        cdef:
+            point p 
+        p.x, p.y, p.z = p1
+        p = self._transform_point(p)
+        return (p.x, p.y, p.z)
+        
     cdef _translate(self, double x, double y, double z):
         self.m03 += x
         self.m13 += y

@@ -20,6 +20,12 @@ class TestTransform(unittest.TestCase):
         TT = [r[3] for r in out[:3]]
         self.assertEquals(TT, [1.,2.,3.])
         
+    def test_translate_point(self):
+        T=Transform()
+        T.translate(1,2,3)
+        out = T.transform_point((0,0,0))
+        self.assertEquals(out, (1.,2.,3.))
+        
     def test_translate2(self):
         T=Transform()
         T.translate(1,2,3)

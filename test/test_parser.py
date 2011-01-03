@@ -5,6 +5,8 @@ from brep.step import STEPLoader
 testdata = "../step_data/cut_cube.stp"
 #testdata = "../step_data/multi_holes.stp"
 #testdata = "../step_data/TDR_step/TPR_beta_design_13-5-10.STEP"
+testdata = "../step_data/cylinder.stp"
+testdata = "../step_data/block_with_hole.stp"
 
 loader = STEPLoader(testdata)
 
@@ -30,17 +32,17 @@ print "verts>", len(solid.vertices)
 #print "edges>", len(s2.edges)
 #print "verts>", len(s2.vertices)
 #
-print solid.as_polydata()
+#print solid.as_polydata()
 
 from brep.display import show_solid
 
 edges = set(solid.shell.edges())
 
-for edge in edges:
-    pt = ((a+b)/2. for a,b in zip(edge.start_vertex, edge.end_vertex))
-    edge.split(pt)
+#for edge in edges:
+#    pt = ((a+b)/2. for a,b in zip(edge.start_vertex, edge.end_vertex))
+#    edge.split(pt)
 
-show_solid(solid)
+show_solid(solid, wireframe=True)
 
 #print "edges", len(s2.edges())
 #for item, val in doc.DATA.items():

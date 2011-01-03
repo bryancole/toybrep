@@ -1,4 +1,9 @@
-
+cdef extern from "math.h":
+    double sin(double)
+    double cos(double)
+    double sqrt(double)
+    double atan2(double, double)
+    double acos(double)
 
 from collections import defaultdict, Counter
 import gc
@@ -54,12 +59,18 @@ cdef class CartesianPoint(ResolvedEntity):
         public char *name
         public double x, y, z
         
+    def __cinit__(self):
+        self.name = ""
+        
     def __init__(self, char *name, args):
         self.name = name
         try:
             self.x, self.y, self.z = args
         except ValueError:
             raise ValueError("Can't unpack to triple: %s"%str(args))
+            
+    def __repr__(self):
+        return "Pt< %g, %g, %g >"%(self.x, self.y, self.z)
             
     def __getitem__(self, int idx):
         if idx==0:
@@ -97,6 +108,19 @@ cdef class CartesianPoint(ResolvedEntity):
         ret.x = self.y*other.z - self.z*other.y
         ret.y = other.x*self.z - other.z*self.x
         ret.z = self.x*other.y - self.y*other.x
+        return ret
+        
+    def unit(self):
+        cdef double mag
+        mag = sqrt(self.x*self.x + self.y*self.y + self.z*self.z)
+        ret = CartesianPoint.__new__(CartesianPoint)
+        ret.x = self.x/mag
+        ret.y = self.y/mag
+        ret.z = self.z/mag
+        return ret
+        
+    def mag(self):
+        return sqrt(self.x*self.x + self.y*self.y + self.z*self.z)
         
             
 entity_classes['CARTESIAN_POINT'] = CartesianPoint        
