@@ -100,7 +100,7 @@ cdef class CartesianPoint(ResolvedEntity):
         
     def dot(self, other):
         other = aspoint(other)
-        return self.x*other.x + self.y*other.y + self.z+other.z
+        return self.x*other.x + self.y*other.y + self.z*other.z
         
     def cross(self, other):
         other = aspoint(other)

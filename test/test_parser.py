@@ -7,6 +7,7 @@ testdata = "../step_data/cut_cube.stp"
 #testdata = "../step_data/TDR_step/TPR_beta_design_13-5-10.STEP"
 testdata = "../step_data/cylinder.stp"
 testdata = "../step_data/block_with_hole.stp"
+testdata = "../step_data/optical_mount.stp"
 
 loader = STEPLoader(testdata)
 
@@ -20,7 +21,7 @@ for item in doc.roots:
 
 solids = [o for o in doc.roots if type(o).__name__=="SHAPE_REPRESENTATION_RELATIONSHIP"]
 print "Solids:", len(solids)
-print solids[0].args[3]
+#print solids[0].args[3]
 print "all", len(doc.manifold_solids)
 
 solid = doc.manifold_solids.pop()

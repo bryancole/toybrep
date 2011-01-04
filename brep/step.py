@@ -25,11 +25,12 @@ class EndOfSection(Exception):
 class STEPDocument(object):
     @property
     def manifold_solids(self):
-        solid_reps = (o for o in self.roots if type(o).__name__=="SHAPE_REPRESENTATION_RELATIONSHIP")
-        level1 = itertools.chain.from_iterable(o.args for o in solid_reps if hasattr(o, 'args'))
-        level2 = itertools.chain.from_iterable(o.args for o in level1 if hasattr(o, 'args'))
-        level3 = itertools.chain.from_iterable( o if isinstance(o, Sequence) else (o,) for o in level2)
-        return set(s for s in level3 if isinstance(s, BrepSolid))
+        #solid_reps = (o for o in self.roots if type(o).__name__=="SHAPE_REPRESENTATION_RELATIONSHIP")
+        #level1 = itertools.chain.from_iterable(o.args for o in solid_reps if hasattr(o, 'args'))
+        #level2 = itertools.chain.from_iterable(o.args for o in level1 if hasattr(o, 'args'))
+        #level3 = itertools.chain.from_iterable( o if isinstance(o, Sequence) else (o,) for o in level2)
+        #return set(s for s in level3 if isinstance(s, BrepSolid))
+        return set(o for o in self.DATA.itervalues() if isinstance(o, BrepSolid))
 
 
 

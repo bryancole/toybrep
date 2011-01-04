@@ -285,7 +285,12 @@ class EdgeCurve(Edge):
         return vertex, edge
         
     def tesselate(self):
-        self.curve.tesselate(self)
+        try:
+            self.curve.tesselate(self)
+        except AttributeError:
+            if isinstance(self.curve, tuple):
+                print "Can't interpret a tuple yet", self.curve
+            raise
         
     def copy_topology(self, memo):
         if self in memo:

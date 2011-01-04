@@ -102,7 +102,7 @@ class Circle(Curve):
             theta = acos(dp)
             if cp < 0:
                 theta = 2*pi - theta
-        else:
+        else:   
             theta = asin(cp)
             if dp < 0:
                 theta = pi - theta
@@ -125,9 +125,7 @@ class Circle(Curve):
             
 @step_type("B_SPLINE_CURVE_WITH_KNOTS")
 class BSplineCurveWithKnots(Curve):
-    def __init__(self, name, degree, control_points,
-                 form, closed, selfintersect,
-                 multiplicities, knots, knot_type):
+    def __init__(self, *args):
         """
         
         @param name:
@@ -143,15 +141,21 @@ class BSplineCurveWithKnots(Curve):
         @param knot_type: enum (uniform_knots, quasi_uniform_knots, 
                 piecewise_bezier_knots, unspecified)
         """
-        self.name = name
-        self.degree = degree
-        self.control_points = control_points
-        self.form = form
-        self.closed = bool(closed)
-        self.selfintersect = bool(selfintersect)
-        self.multiplicities = multiplicities
-        self.knots = knots
-        self.knot_type = knot_type
+        try:
+            self.name = args[0]
+            self.degree = args[1]
+            self.control_points = args[2]
+            self.form = args[3]
+            self.closed = bool(args[4])
+            self.selfintersect = bool(args[5])
+            self.multiplicities = args[6]
+            self.knots = args[7]
+            self.knot_type = args[8]
+        except IndexError:
+            print "Bad Bad B-Spline"
+        
+    def tesselate(self, edge):
+        pass
     
     
 @step_type("PLANE")
