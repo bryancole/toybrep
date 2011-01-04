@@ -7,7 +7,7 @@ import pyximport; pyximport.install()
 from cstep import ResolvedEntity, entity_classes, CartesianPoint, Star, step_type
 from weakref import proxy, WeakSet
 
-from collections import defaultdict
+from collections import defaultdict, deque
 
 
 @step_type("MANIFOLD_SOLID_BREP")
@@ -69,6 +69,18 @@ class ClosedShell(ResolvedEntity):
         edges = set(self.edges())
         for e in edges:
             e.tesselate()
+            
+    def edge_set(self):
+        base = self.faces.copy().pop().bounds.copy().pop().bound.base_edge
+        stack = deque([base])
+        seen = set()
+        while stack:
+            edge = stack.popleft()
+            seen.add(edge)
+            for e in (edge.left_cc_edge, edge.right_cc_edge, edge.left_cw_edge, edge.right_cw_edge):
+                if e not in seen:
+                    stack.append(e)
+        return seen
         
     def edges(self):
         for face in self.faces:

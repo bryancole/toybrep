@@ -38,6 +38,11 @@ print "verts>", len(solid.vertices)
 from brep.display import show_solid
 
 edges = set(solid.shell.edges())
+edges2 = solid.shell.edge_set()
+
+print len(edges), len(edges2)
+
+#assert edges == edges2
 
 #for edge in edges:
 #    pt = ((a+b)/2. for a,b in zip(edge.start_vertex, edge.end_vertex))
