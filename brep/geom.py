@@ -121,6 +121,37 @@ class Circle(Curve):
             
         for pt in reversed(new_points):
             edge.split(pt)
+            
+            
+@step_type("B_SPLINE_CURVE_WITH_KNOTS")
+class BSplineCurveWithKnots(Curve):
+    def __init__(self, name, degree, control_points,
+                 form, closed, selfintersect,
+                 multiplicities, knots, knot_type):
+        """
+        
+        @param name:
+        @param degree: integer
+        @param control_points: list of CartesianPoints
+        @param form: enum (polyline_form, circular_arc, 
+                  elliptic_arc, parabolic_arc, hyperbolic_arc, 
+                  unspecified)
+        @param closed: bool
+        @param selfintersect: bool
+        @param multiplicities: list of ints
+        @param knots: list of floats
+        @param knot_type: enum (uniform_knots, quasi_uniform_knots, 
+                piecewise_bezier_knots, unspecified)
+        """
+        self.name = name
+        self.degree = degree
+        self.control_points = control_points
+        self.form = form
+        self.closed = bool(closed)
+        self.selfintersect = bool(selfintersect)
+        self.multiplicities = multiplicities
+        self.knots = knots
+        self.knot_type = knot_type
     
     
 @step_type("PLANE")
