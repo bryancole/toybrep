@@ -5,8 +5,9 @@ from brep.step import STEPLoader
 testdata = "../step_data/cut_cube.stp"
 #testdata = "../step_data/multi_holes.stp"
 #testdata = "../step_data/TDR_step/TPR_beta_design_13-5-10.STEP"
-testdata = "../step_data/cylinder.stp"
-testdata = "../step_data/block_with_hole.stp"
+#testdata = "../step_data/cylinder.stp"
+#testdata = "../step_data/block_with_hole.stp"
+testdata = "../step_data/optical_mount.stp"
 
 loader = STEPLoader(testdata)
 
@@ -37,6 +38,11 @@ print "verts>", len(solid.vertices)
 from brep.display import show_solid
 
 edges = set(solid.shell.edges())
+edges2 = solid.shell.edge_set()
+
+print len(edges), len(edges2)
+
+#assert edges == edges2
 
 #for edge in edges:
 #    pt = ((a+b)/2. for a,b in zip(edge.start_vertex, edge.end_vertex))
