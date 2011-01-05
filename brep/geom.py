@@ -7,6 +7,7 @@ import pyximport; pyximport.install()
 from cstep import ResolvedEntity, entity_classes, CartesianPoint, Star, step_type, Direction
 from math import sqrt, cos, sin, pi, acos, asin, ceil
 from brep.transforms import Transform
+from brep.nurbs import NurbsCurve
 import bisect
 
 
@@ -85,13 +86,13 @@ class Circle(Curve):
     def tesselate(self, edge):
         start = edge.start_vertex.point
         end = edge.end_vertex.point
-        print "TESS", start, end
+        #print "TESS", start, end
         sense = edge.sense
         
         centre = self.position.location
         axis = self.position.axis.unit()
         
-        print "TESS", start, end, centre, axis
+        #print "TESS", start, end, centre, axis
         #get angle round the arc
         v1 = (start - centre).unit()
         v2 = (end - centre).unit()
@@ -155,42 +156,26 @@ class BSplineCurveWithKnots(Curve):
         except IndexError:
             print "Bad Bad B-Spline"
             
-    def get_basis(self, i, p, u):
-        '''
-        
-        @param i: index of the span
-        @param p: NURBS degree
-        @param u: parameter value
-        '''
-        Nb = [0.0]
-        Uk = self.knots
-        left = [0]*p
-        right = [0]*p
-        for j in xrange(1,p):
-            left[j] = u - Uk[i+1-j]
-            right[j] = Uk[i+j] - u
-            saved = 0.0
-            for r in xrange(j):
-                temp = Nb[r]/(right[r+1]+left[j-r])
-                Nb[r] = saved+right[r+1]*temp
-                saved = left[j-r]*temp
-            Nb.append(saved)
-        return Nb
+        print self.degree
+        print self.knots
+        print self.control_points
+        print self.multiplicities
+            
+        self.NC = NurbsCurve(int(self.degree), 
+                             list(self.knots), 
+                             list(self.control_points), 
+                             [int(a) for a in self.multiplicities])
     
     def evalutate(self, u):
-        i = bisect.bisect_right(self.knots, u)
-        p = self.degree
-        basis = self.get_basis(i, p, u)
-        #NOT YET WORKING
-        v=0.0
-        for j in xrange(p):
-            v += basis[j]*self.control_points[i-p+j]
-        return v
-
-            
+        return CartesianPoint("", self.NC.evaluate(u))
         
     def tesselate(self, edge):
-        pass
+        N = 300
+        new_points = (self.NC.evaluate(i/float(N)) for i in xrange(1,N))
+        new_ct = [CartesianPoint("", a) for a in new_points]    
+        for pt in reversed(new_ct):
+            print pt
+            edge.split(pt)
     
     
 @step_type("PLANE")

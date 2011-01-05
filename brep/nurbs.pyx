@@ -17,8 +17,8 @@ cdef int find_span(int n, int p, double u, double *Uk):
     cdef:
         int low,high,mid
         
-    if u == Uk[n+1]:
-        return n #special case
+    if u >= Uk[n+p]:
+        return n+p #special case
     
     low = p
     high = n+1
@@ -49,7 +49,7 @@ cdef void get_basis(int i, int p, double u, double *Nb, double *Uk):
         left = <double*>malloc( sizeof(double) * p )
         right = <double*>malloc( sizeof(double) * p )
             
-        Nb[0] = 0.0
+        Nb[0] = 1.0
         for j in xrange(1,p):
             left[j] = u - Uk[i+1-j]
             right[j] = Uk[i+j] - u
@@ -59,7 +59,7 @@ cdef void get_basis(int i, int p, double u, double *Nb, double *Uk):
                 Nb[r] = saved+right[r+1]*temp
                 saved = left[j-r]*temp
             Nb[j] = saved
-            print "set Nb[%d] = %g"%(j, saved)
+            #print "set Nb[%d] = %g"%(j, saved)
 
         free(left)
         free(right)
@@ -80,6 +80,7 @@ cdef class NurbsCurve:
             point _pt
             
         assert len(multiplicities) == len(knots)
+        assert sum(multiplicities) == len(points) + degree + 1
             
         self.degree = degree
         self.n_knots = n_knots
@@ -119,7 +120,13 @@ cdef class NurbsCurve:
         free(self.points)
         
     def get_basis(self, int i, double u):
-        raise NotImplementedError
+        Nb = <double*>malloc(sizeof(double)*self.degree)
+        get_basis(i, self.degree, u, Nb, self.knots)
+        out = []
+        for i in xrange(self.degree):
+            out.append(Nb[i])
+        free(Nb)
+        return out
         
     def evaluate(self, double u):
         cdef:
@@ -134,14 +141,14 @@ cdef class NurbsCurve:
                       p,
                       u,
                       self.knots
-                      ) + 1
+                      )
         print "span=", i
         get_basis(i,p,u,
                   Nb, self.knots)
         
         for j in xrange(p):
             pt = self.points[i-p+j]
-            print pt.x, pt.y, pt.z, i-p+j
+            #print pt.x, pt.y, pt.z, i-p+j
             vx += Nb[j]*pt.x
             vy += Nb[j]*pt.y
             vz += Nb[j]*pt.z

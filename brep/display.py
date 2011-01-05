@@ -24,8 +24,8 @@ def show_solid(solid, wireframe=False, show_vertex_ids=False):
         ca.InsertNextCell(len(c))
         for id in c:
             ca.InsertCellPoint(id)
-            print id,
-        print
+            #print id,
+        #print
             
     if wireframe:
         pd.SetLines(ca)
