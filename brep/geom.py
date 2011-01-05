@@ -7,6 +7,7 @@ import pyximport; pyximport.install()
 from cstep import ResolvedEntity, entity_classes, CartesianPoint, Star, step_type, Direction
 from math import sqrt, cos, sin, pi, acos, asin, ceil
 from brep.transforms import Transform
+import bisect
 
 
 ARC_RESOLUTION = 2*pi/128.
@@ -153,6 +154,40 @@ class BSplineCurveWithKnots(Curve):
             self.knot_type = args[8]
         except IndexError:
             print "Bad Bad B-Spline"
+            
+    def get_basis(self, i, p, u):
+        '''
+        
+        @param i: index of the span
+        @param p: NURBS degree
+        @param u: parameter value
+        '''
+        Nb = [0.0]
+        Uk = self.knots
+        left = [0]*p
+        right = [0]*p
+        for j in xrange(1,p):
+            left[j] = u - Uk[i+1-j]
+            right[j] = Uk[i+j] - u
+            saved = 0.0
+            for r in xrange(j):
+                temp = Nb[r]/(right[r+1]+left[j-r])
+                Nb[r] = saved+right[r+1]*temp
+                saved = left[j-r]*temp
+            Nb.append(saved)
+        return Nb
+    
+    def evalutate(self, u):
+        i = bisect.bisect_right(self.knots, u)
+        p = self.degree
+        basis = self.get_basis(i, p, u)
+        #NOT YET WORKING
+        v=0.0
+        for j in xrange(p):
+            v += basis[j]*self.control_points[i-p+j]
+        return v
+
+            
         
     def tesselate(self, edge):
         pass
