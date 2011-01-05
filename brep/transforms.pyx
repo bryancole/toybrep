@@ -5,8 +5,7 @@ cdef extern from "math.h":
     double atan2(double, double)
 
 
-cdef struct point:
-    double x,y,z
+from cstep cimport point
 
 
 cdef class Transform:
