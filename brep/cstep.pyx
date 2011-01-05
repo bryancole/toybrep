@@ -8,6 +8,10 @@ cdef extern from "math.h":
 from collections import defaultdict, Counter
 import gc
 
+
+cdef struct point:
+    double x,y,z
+
 cdef int total
 
 
@@ -54,10 +58,10 @@ cdef class ResolvedEntity(BaseEntity):
     
     
 cdef class CartesianPoint(ResolvedEntity):
-    cdef:
-        public int eid
-        public char *name
-        public double x, y, z
+#    cdef:
+#        public int eid
+#        public char *name
+#        public double x, y, z
         
     def __cinit__(self):
         self.name = ""
