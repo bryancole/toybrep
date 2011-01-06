@@ -1,51 +1,50 @@
 import pyximport; pyximport.install()
 from brep.nurbs import NurbsCurve
+import unittest
+import numpy
 
-import unittest, math
 
-
-def alpha(i,j,u,s):
-    try:
-        if s[i]==s[i+j]:
-            return 0.0
-        else:
-            return (u-s[i]) / (s[i+j] - s[i])
-    except IndexError:
-        return 0.0
-    
-
-def basis(i,n,u,k):
-    '''
-    Slow function for evaluating the nurbs basis functions 
-    @param i: span index
-    @param n: degree of curve
-    @param u: parameter value
-    @param k: list of knot values
-    '''
-    if n==0:
-        return 1.0 if k[i] <= u < k[i+1] else 0.0
-    
-    N = alpha(i,n,u,k)*basis(i,n-1,u,k) + \
-        (1 - alpha(i+1,n,u,k))*basis(i+1,n-1,u,k)
-    
-    return N
+def eval_bezier(t, plist):
+    """
+    Evaluates a cubic bezier spline. This should be equal to
+    a nurbs curve where the know multiplicities are [4,4]
+    """
+    out = []
+    for i in xrange(len(plist[0])):
+        v = (1-t)**3 * plist[0][i] +\
+            3 * (1-t)**2 * t * plist[1][i] +\
+            3 * (1-t) * t**2 * plist[2][i] +\
+            t**3 * plist[3][i]
+        out.append(v)
+    return tuple(out)
 
 
 class TestNurbsCurve(unittest.TestCase):
-    def test_create(self):
-        N = NurbsCurve(3, [0., 1.], 
+    def setUp(self):
+        self.N = NurbsCurve(3, [0., 1.], 
                        [(1,2,3),(2,3,4),(3,4,5),(4,5,6)],
                        [4,4])
-        print "eval:", N.evaluate(0.9)
-        print N.get_points()
-        print N.get_knots()
-        print "basis:"
-        k = [0.]*4 + [1.0]*4
-        #for i in xrange(0,8):
-        #    print N.get_basis(i, 0.5), "...", [basis(i,p,0.5,k) for p in xrange(4)]
-            
-         
         
+    def test_knots(self):
+        self.assertEquals(self.N.get_knots(), [0.0,0.0,0.0,0.0,
+                                               1.0,1.0,1.0,1.0])
+        
+    def test_points(self):
+        pts = self.N.get_points()
+        self.assertEquals(pts, [(1,2,3),(2,3,4),(3,4,5),(4,5,6)])
+        
+    def test_basis(self):
+        u = numpy.linspace(0.0,1.0,10)
+        self.assertTrue(all(sum(self.N.get_basis(3,t)) for t in u))
+        
+    def test_bezier(self):
+        pts = self.N.get_points()
+        u = numpy.linspace(0.0,1.0,10)
+        A = [self.N.evaluate(t) for t in u]
+        B = [eval_bezier(t, pts) for t in u]
+        for a,b in zip(A,B):
+            for aa,bb in zip(a,b):
+                self.assertAlmostEquals(aa,bb)        
     
         
 if __name__=="__main__":

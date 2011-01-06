@@ -7,7 +7,7 @@ testdata = "../step_data/cut_cube.stp"
 #testdata = "../step_data/TDR_step/TPR_beta_design_13-5-10.STEP"
 testdata = "../step_data/cylinder.stp"
 testdata = "../step_data/block_with_hole.stp"
-testdata = "../step_data/optical_mount2.stp"
+testdata = "../step_data/optical_mount.stp"
 
 loader = STEPLoader(testdata)
 

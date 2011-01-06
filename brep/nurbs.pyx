@@ -30,7 +30,8 @@ cdef int find_span(int n, int p, double u, double *Uk):
         else:
             low = mid
         mid = (low+high)//2
-        return mid
+        
+    return mid
 
 
 cdef void get_basis(int i, int p, double u, double *Nb, double *Uk):
@@ -56,7 +57,7 @@ cdef void get_basis(int i, int p, double u, double *Nb, double *Uk):
             saved = 0.0
             for r in xrange(j):
                 temp = Nb[r]/(right[r+1]+left[j-r])
-                Nb[r] = saved+right[r+1]*temp
+                Nb[r] = saved+ (right[r+1]*temp)
                 saved = left[j-r]*temp
             Nb[j] = saved
             #print "set Nb[%d] = %g"%(j, saved)
@@ -120,10 +121,10 @@ cdef class NurbsCurve:
         free(self.points)
         
     def get_basis(self, int i, double u):
-        Nb = <double*>malloc(sizeof(double)*self.degree)
+        Nb = <double*>malloc(sizeof(double)*(self.degree+1))
         get_basis(i, self.degree, u, Nb, self.knots)
         out = []
-        for i in xrange(self.degree):
+        for i in xrange(self.degree+1):
             out.append(Nb[i])
         free(Nb)
         return out
@@ -135,16 +136,11 @@ cdef class NurbsCurve:
             int i, j, p=self.degree
             point pt
         
-        Nb = <double*>malloc(sizeof(double)*(self.degree+1))
+        Nb = <double*>malloc(sizeof(double)*(p+1))
         
-        i = find_span(self.n_points-1,
-                      p,
-                      u,
-                      self.knots
-                      )
-        print "span=", i
-        get_basis(i,p,u,
-                  Nb, self.knots)
+        i = find_span(self.n_points-1, p, u, self.knots)
+
+        get_basis(i, p, u, Nb, self.knots)
         
         for j in xrange(p+1):
             pt = self.points[i-p+j]
