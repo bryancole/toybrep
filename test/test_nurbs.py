@@ -4,6 +4,16 @@ from brep.nurbs import NurbsCurve
 import unittest, math
 
 
+def alpha(i,j,u,s):
+    try:
+        if s[i]==s[i+j]:
+            return 0.0
+        else:
+            return (u-s[i]) / (s[i+j] - s[i])
+    except IndexError:
+        return 0.0
+    
+
 def basis(i,n,u,k):
     '''
     Slow function for evaluating the nurbs basis functions 
@@ -12,20 +22,12 @@ def basis(i,n,u,k):
     @param u: parameter value
     @param k: list of knot values
     '''
-    #DOESN'T WORK
     if n==0:
-        return 1.0
+        return 1.0 if k[i] <= u < k[i+1] else 0.0
     
-    fb = basis(i,n-1,u,k)
-    gb = basis(i+1,n-1,u,k)
+    N = alpha(i,n,u,k)*basis(i,n-1,u,k) + \
+        (1 - alpha(i+1,n,u,k))*basis(i+1,n-1,u,k)
     
-    if fb==0 and gb==0:
-        return 0
-    
-    f = (u-k[i]) / (k[i+n] - k[i])
-    g = (k[i+n+1] - u) / (k[i+n+1] - k[i+1])
-    
-    N = f*fb + g*gb
     return N
 
 
@@ -39,8 +41,8 @@ class TestNurbsCurve(unittest.TestCase):
         print N.get_knots()
         print "basis:"
         k = [0.]*4 + [1.0]*4
-        for i in xrange(8):
-            print N.get_basis(i, 0.5), "...", [basis(i,p,0.5,k) for p in xrange(3)]
+        #for i in xrange(0,8):
+        #    print N.get_basis(i, 0.5), "...", [basis(i,p,0.5,k) for p in xrange(4)]
             
          
         
