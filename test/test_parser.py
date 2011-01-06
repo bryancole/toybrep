@@ -48,7 +48,7 @@ print len(edges), len(edges2)
 #    pt = ((a+b)/2. for a,b in zip(edge.start_vertex, edge.end_vertex))
 #    edge.split(pt)
 
-show_solid(solid, wireframe=True)
+show_solid(solid, wireframe=False)
 
 #print "edges", len(s2.edges())
 #for item, val in doc.DATA.items():

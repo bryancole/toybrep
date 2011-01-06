@@ -13,34 +13,6 @@ import bisect
 
 ARC_RESOLUTION = 2*pi/128.
 
-
-def rotate_point(point, origin, direction, angle):
-    '''
-    rotates points about the given axis by the given angle
-    returns a list of CartesianPoint instances
-    
-    @param points: a 3-sequences
-    @param origin: 3-sequence giving the location
-    @param direction: 3-sequence giving the axis direction
-    @param angle: rotate angle in radians
-    '''
-    x,y,z = point
-    a,b,c = origin
-    u,v,w = direction
-    L = u*u + v*v + w*w
-    cosA = cos(angle)
-    sinA = sin(angle)
-    
-    X = ( a*(v*v + w*w) + u*(-b*v - c*w + u*x + v*y + w*z) \
-          + (-a*(v*v + w*w) + u*(b*v + c*w - v*y - w*z) + (v*v + w*w)*x )*cosA \
-          + sqrt(L)*(-c*v + b*w - w*y + v*z)*sinA \
-        ) / L
-        
-    Y = ( b*(u*u + w*w) + v*(-a*u - c*w + u*x + v*y + w*z) \
-          + (-b*(u*u + w*w) + v*(a*u + c*w - u*x - w*z) + (u*u + w*w)*y )*cosA \
-          + sqrt(L)*(c*u - a*w + w*x - u*z)*sinA \
-        ) / L
-    
         
 
 @step_type("VECTOR")
@@ -60,7 +32,8 @@ class Curve(ResolvedEntity):
 class Surface(ResolvedEntity):
     """ABC for 2D geometry"""
     def tesselate_face(self, face):
-        raise NotImplementedError
+        #raise NotImplementedError
+        pass
     
     
 @step_type("LINE")
@@ -174,7 +147,6 @@ class BSplineCurveWithKnots(Curve):
         new_points = (self.NC.evaluate(i/float(N)) for i in xrange(1,N))
         new_ct = [CartesianPoint("", a) for a in new_points]    
         for pt in reversed(new_ct):
-            print pt
             edge.split(pt)
     
     
@@ -189,12 +161,37 @@ class Plane(Surface):
         pass
     
     
-@step_type("CYLINDERICAL_SURFACE")
+@step_type("SPHERICAL_SURFACE")
+class SphericalSurface(Surface):
+    def __init__(self, name, position, radius):
+        self.name = name
+        self.position = position #axis2_placement_3d
+        self.radius = radius #float
+    
+    
+@step_type("CYLINDRICAL_SURFACE")
 class CylindericalSurface(Surface):
     def __init__(self, name, position, radius):
         self.name = name
         self.position = position #an Axis2Placement3d
         self.radius = radius #a positive float
+        
+
+@step_type("CONICAL_SURFACE")
+class ConicalSurface(Surface):
+    def __init__(self, name, position, radius, semiangle):
+        self.name = name
+        self.position = position #an Axis2_placement3d
+        self.radius = radius #float
+        self.semiangle = semiangle #float
+        
+        
+@step_type("TOROIDAL_SURFACE")
+class ToroidalSurface(Surface):
+    def __init__(self, name, position, major, minor):
+        self.position = position
+        self.major_radius = major
+        self.minor_radius = minor
         
 
 @step_type("AXIS2_PLACEMENT_3D")

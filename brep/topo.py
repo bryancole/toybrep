@@ -63,7 +63,7 @@ class ClosedShell(ResolvedEntity):
         
     def tesselate(self, tolerance=0.001):
         for face in self.faces:
-            face.tesselate(tolerance)
+            face.tesselate()
             
     def tesselate_edges(self):
         edges = set(self.edges())
@@ -101,8 +101,9 @@ class AdvancedFace(ResolvedEntity):
         self.geometry = geometry
         self.sense = bool(sense)
         
-    def tesselate(self, tolerance=0.001):
-        self.geometry.tesselate_face(self.bounds)
+    def tesselate(self):
+        print self.geometry
+        self.geometry.tesselate_face(self)
         
     def copy_topology(self, memo):
         if self in memo:
