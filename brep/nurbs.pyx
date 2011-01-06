@@ -9,7 +9,7 @@ from itertools import izip
 
 cdef int find_span(int n, int p, double u, double *Uk):
     """
-    n - no. of control points
+    n - no. of control points - 1
     p - degree
     u - parameter value
     Uk - array of knot values
@@ -17,14 +17,14 @@ cdef int find_span(int n, int p, double u, double *Uk):
     cdef:
         int low,high,mid
         
-    if u >= Uk[n+p]:
-        return n+p #special case
+    if u == Uk[n+1]:
+        return n #special case
     
     low = p
     high = n+1
     mid = (low+high)//2
     
-    while (u < Uk[mid] or u >= Uk[mid+1]):
+    while (u < Uk[mid]) or (u >= Uk[mid+1]):
         if (u < Uk[mid]):
             high = mid
         else:
@@ -46,11 +46,11 @@ cdef void get_basis(int i, int p, double u, double *Nb, double *Uk):
             double saved, temp
             int j, r
             
-        left = <double*>malloc( sizeof(double) * p )
-        right = <double*>malloc( sizeof(double) * p )
+        left = <double*>malloc( sizeof(double) * (p+1) )
+        right = <double*>malloc( sizeof(double) * (p+1) )
             
         Nb[0] = 1.0
-        for j in xrange(1,p):
+        for j in xrange(1,p+1):
             left[j] = u - Uk[i+1-j]
             right[j] = Uk[i+j] - u
             saved = 0.0
@@ -135,9 +135,9 @@ cdef class NurbsCurve:
             int i, j, p=self.degree
             point pt
         
-        Nb = <double*>malloc(sizeof(double)*self.degree)
+        Nb = <double*>malloc(sizeof(double)*(self.degree+1))
         
-        i = find_span(self.n_points,
+        i = find_span(self.n_points-1,
                       p,
                       u,
                       self.knots
@@ -146,7 +146,7 @@ cdef class NurbsCurve:
         get_basis(i,p,u,
                   Nb, self.knots)
         
-        for j in xrange(p):
+        for j in xrange(p+1):
             pt = self.points[i-p+j]
             #print pt.x, pt.y, pt.z, i-p+j
             vx += Nb[j]*pt.x

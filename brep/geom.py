@@ -153,18 +153,18 @@ class BSplineCurveWithKnots(Curve):
             self.multiplicities = args[6]
             self.knots = args[7]
             self.knot_type = args[8]
+            
+            print self.degree
+            print self.knots
+            print self.control_points
+            print self.multiplicities
+                
+            self.NC = NurbsCurve(int(self.degree), 
+                                 list(self.knots), 
+                                 list(self.control_points), 
+                                 [int(a) for a in self.multiplicities])
         except IndexError:
             print "Bad Bad B-Spline"
-            
-        print self.degree
-        print self.knots
-        print self.control_points
-        print self.multiplicities
-            
-        self.NC = NurbsCurve(int(self.degree), 
-                             list(self.knots), 
-                             list(self.control_points), 
-                             [int(a) for a in self.multiplicities])
     
     def evalutate(self, u):
         return CartesianPoint("", self.NC.evaluate(u))

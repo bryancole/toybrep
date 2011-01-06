@@ -3,9 +3,6 @@ import unittest, math
 
 def alpha(i,j,u,s):
     #try:
-    if u==s[-1]:
-        return 1.0
-    
     if s[i]==s[i+j]:
         return 0.0
     else:
@@ -22,11 +19,14 @@ def basis(i,n,u,k):
     @param u: parameter value
     @param k: list of knot values
     '''
+    if u==k[-1]:
+        return 1.0
+    
     if n==0:
-        return 1.0 if k[i] <= u <= k[i+1] else 0.0
+        return 1.0 if k[i] <= u < k[i+1] else 0.0
     
     N = alpha(i,n,u,k)*basis(i,n-1,u,k) + \
-        (1 - alpha(i+1,n,u,k))*basis(i+1,n-1,u,k)
+        (1.0 - alpha(i+1,n,u,k))*basis(i+1,n-1,u,k)
     
     return N
 
@@ -39,7 +39,7 @@ import numpy as np
 
 T = np.linspace(0.,1., 100)
 k = [0.0,0.0,0.0,0.0,1.0,1.0,1.0,1.0]
-#k = [0.0]*3 + list(np.linspace(0.0,1.0,2)) + [1.0]*3
+#k = [-3.,-2.,-1.,0.0,1.0,2.0,3.0,4.0]
 points = [(-1.5,0),(-1,1),(1,1),(1.5,0)]
 
 X = []
