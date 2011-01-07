@@ -47,6 +47,12 @@ class BrepSolid(ResolvedEntity):
         verts = list(set(shell.vertices()))
         point_map = dict((v,i) for i,v in enumerate(verts))
         edges = set(shell.edges())
+        
+        #test
+        s1 = set(e.start_vertex for e in shell.edges())
+        s1.update(e.end_vertex for e in shell.edges())
+        assert (s1 == set(shell.vertices()))
+        
         cells = [(point_map[e.start_vertex], point_map[e.end_vertex]) for e in edges]
         points = [tuple(v) for v in verts]
         return points, cells
@@ -193,8 +199,6 @@ class EdgeLoop(Loop):
         curve - the geometry to be associated with the new edge
         """
         
-        
-        
     def copy_topology(self, memo):
         if self in memo:
             return memo[self]
@@ -206,49 +210,34 @@ class EdgeLoop(Loop):
             copy.base_edge = memo[self.base_edge]
             return copy
         
-        
     def edges(self):
         this = base = self.base_edge
         if this.right_loop is self:
             last = base_last = this.right_cc_edge
-            orientation = True
         else:
             last = base_last = this.left_cc_edge
-            orientation = False
-            
-        yield this, orientation
-        
         while True:
             if this.right_cc_edge is last:
+                yield this, True
                 next = this.right_cw_edge
                 last = this
                 this = next
-                orientation = True
             elif this.left_cc_edge is last:
+                yield this, False
                 next = this.left_cw_edge
                 last = this
                 this = next
-                orientation = False
             else:
                 raise TopologyError("Edge loop incorrectly connected")
-                
             if (this, last) == (base, base_last):
                 break
-            yield this, orientation
             
     def vertices(self):
-        this = base = self.base_edge
-        while True:
-            if this.right_loop is self:
-                yield this.start_vertex
-                this = this.right_cw_edge
+        for e,o in self.edges():
+            if o:
+                yield e.start_vertex
             else:
-                yield this.end_vertex
-                this = this.left_cw_edge
-            if this is base:
-                    break
-                    
-
+                yield e.end_vertex
             
 
 @step_type("EGDE")
