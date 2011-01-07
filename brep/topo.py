@@ -10,6 +10,11 @@ from weakref import proxy, WeakSet
 from collections import defaultdict, deque
 
 
+class TopologyError(Exception):
+    pass
+
+
+
 @step_type("MANIFOLD_SOLID_BREP")
 class BrepSolid(ResolvedEntity):
     def __init__(self, name, shell):
@@ -84,7 +89,7 @@ class ClosedShell(ResolvedEntity):
         
     def edges(self):
         for face in self.faces:
-            for edge in face.edges():
+            for edge, o in face.edges():
                 yield edge
                 
     def vertices(self):
@@ -102,7 +107,6 @@ class AdvancedFace(ResolvedEntity):
         self.sense = bool(sense)
         
     def tesselate(self):
-        print self.geometry
         self.geometry.tesselate_face(self)
         
     def copy_topology(self, memo):
@@ -177,9 +181,9 @@ class EdgeLoop(Loop):
         self.base_edge = edge_list[0].subedge
         
         try:
-            assert tuple(self.edges()) == tuple(oe.subedge for oe in edge_list)
+            assert tuple(e for e,o in self.edges()) == tuple(oe.subedge for oe in edge_list)
         except AssertionError:
-            print tuple(e.eid for e in self.edges())
+            print tuple(e.eid for e,o in self.edges())
             print tuple(oe.subedge.eid for oe in edge_list)
             raise
         
@@ -198,22 +202,39 @@ class EdgeLoop(Loop):
             copy = EdgeLoop.__new__(EdgeLoop)
             super(EdgeLoop, copy).__init__("")
             memo[self] = copy
-            edges = [e.copy_topology(memo) for e in self.edges()]
+            edges = [e.copy_topology(memo) for e,o in self.edges()]
             copy.base_edge = memo[self.base_edge]
             return copy
-                
-                
+        
+        
     def edges(self):
         this = base = self.base_edge
-        yield this
+        if this.right_loop is self:
+            last = base_last = this.right_cc_edge
+            orientation = True
+        else:
+            last = base_last = this.left_cc_edge
+            orientation = False
+            
+        yield this, orientation
+        
         while True:
-            if this.right_loop is self:
-                this = this.right_cw_edge
+            if this.right_cc_edge is last:
+                next = this.right_cw_edge
+                last = this
+                this = next
+                orientation = True
+            elif this.left_cc_edge is last:
+                next = this.left_cw_edge
+                last = this
+                this = next
+                orientation = False
             else:
-                this = this.left_cw_edge
-            if this is base:
+                raise TopologyError("Edge loop incorrectly connected")
+                
+            if (this, last) == (base, base_last):
                 break
-            yield this
+            yield this, orientation
             
     def vertices(self):
         this = base = self.base_edge
