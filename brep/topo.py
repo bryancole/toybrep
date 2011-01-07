@@ -193,11 +193,23 @@ class EdgeLoop(Loop):
             print tuple(oe.subedge.eid for oe in edge_list)
             raise
         
-    def divide(self, start_vertex, end_vertex, curve):
+    def divide(self, start_vertex, end_vertex, curve, sense):
         """Creates a new edge between the given vertices
         to divide the loop in two. The new loop is returned.
+        
         curve - the geometry to be associated with the new edge
+        sense - direction of edge w.r.t. curve
+        
+        The two vertices must already lie in the loop.
+        The curve must lie in the surface of the owning face (not checked)
+        such that the new edge lies wholely in within the original face.
         """
+        verts = set(self.vertices())
+        edges = set(self.edges())
+        assert (start_vertex in verts) and (end_vertex in verts)
+        
+        e_new = EdgeCurve("", start_vertex, end_vertex, curve, sense)
+         
         
     def copy_topology(self, memo):
         if self in memo:
@@ -276,6 +288,11 @@ class EdgeCurve(Edge):
         self.right_cc_edge = None
         self.right_cw_edge = None
         
+        if start_vertex.edge is None:
+            start_vertex.edge = self
+        if end_vertex.edge is None:
+            end_vertex.edge = self
+        
     def split(self, point):
         """Subdivide this edge at the given point.
         No checking is performed to verify if the point lies on the curve
@@ -289,6 +306,8 @@ class EdgeCurve(Edge):
         edge.right_cw_edge = self.right_cw_edge
         edge.left_cw_edge = self
         edge.right_cc_edge = self
+        
+        vertex.edge = edge
         
         left_cc_edge = self.left_cc_edge #need to update the adjacent edges
         if left_cc_edge.start_vertex == edge.end_vertex:
@@ -318,12 +337,13 @@ class EdgeCurve(Edge):
     def copy_topology(self, memo):
         if self in memo:
             return memo[self]
-        copy = EdgeCurve("",
+        copy = EdgeCurve.__new__(EdgeCurve)
+        memo[self] = copy
+        EdgeCurve.__init__(copy, "",
                          self.start_vertex.copy_topology(memo),
                          self.end_vertex.copy_topology(memo),
                          self.curve,
                          self.sense)
-        memo[self] = copy
         copy.left_loop = self.left_loop.copy_topology(memo) 
         copy.right_loop = self.right_loop.copy_topology(memo)
         copy.left_cc_edge = self.left_cc_edge.copy_topology(memo)
@@ -342,13 +362,44 @@ class Vertex(ResolvedEntity):
             self.point = CartesianPoint('', point)
         else:
             self.point = point
+        self.edge = None
 
     def copy_topology(self, memo):
         if self in memo:
             return memo[self]
         copy = Vertex("", self.point)
         memo[self] = copy
+        copy.edge = self.edge.copy_topology(memo)
         return copy
+    
+    def edges(self):
+        """iterate edges clockwise round the vertex"""
+        base = self.edge
+        if base is None:
+            return
+        
+        if base.end_vertex is self:
+            vert_base = "end"
+            this = base.left_cc_edge
+        elif base.start_vertex is self:
+            vert_base = "start"
+            this = base.right_cc_edge
+        else:
+            raise TopologyError("Incorrectly connected edges at vertex")
+        
+        while True:
+            #FIXME: this isn't right as a self-connected edge will loop forever
+            yield this
+            if this.start_vertex is self: 
+                vert = "start"
+                if (this, vert) == (base, vert_base): break
+                this = this.right_cc_edge
+            elif this.end_vertex is self:
+                vert = "end"
+                if (this, vert) == (base, vert_base): break
+                this = this.left_cc_edge
+            else:
+                raise TopologyError("Incorrectly connected edges at vertex")
     
     def __getitem__(self, idx):
         return self.point[idx]

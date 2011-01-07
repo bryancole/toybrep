@@ -46,6 +46,7 @@ class BlockTest(unittest.TestCase):
             for v in loop.vertices():
                 c[v]
         self.assertTrue(all(n==3 for n in c.values()))
+        self.assertTrue(all(len(list(v.edges())) == 3 for v in loop.vertices()))
         
 
 class SubdividedBlockTest(unittest.TestCase):
