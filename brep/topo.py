@@ -374,32 +374,28 @@ class Vertex(ResolvedEntity):
     
     def edges(self):
         """iterate edges clockwise round the vertex"""
-        base = self.edge
+        this = base = self.edge
         if base is None:
             return
         
         if base.end_vertex is self:
-            vert_base = "end"
-            this = base.left_cc_edge
+            last_loop = base_loop = base.right_loop
         elif base.start_vertex is self:
-            vert_base = "start"
-            this = base.right_cc_edge
+            last_loop = base_loop = base.left_loop
         else:
             raise TopologyError("Incorrectly connected edges at vertex")
-        
         while True:
-            #FIXME: this isn't right as a self-connected edge will loop forever
             yield this
-            if this.start_vertex is self: 
-                vert = "start"
-                if (this, vert) == (base, vert_base): break
-                this = this.right_cc_edge
-            elif this.end_vertex is self:
-                vert = "end"
-                if (this, vert) == (base, vert_base): break
+            if this.right_loop == last_loop:
+                last_loop = this.left_loop
                 this = this.left_cc_edge
+            elif this.left_loop == last_loop:
+                last_loop = this.right_loop
+                this = this.right_cc_edge
             else:
                 raise TopologyError("Incorrectly connected edges at vertex")
+            if (this, last_loop) == (base, base_loop):
+                break
     
     def __getitem__(self, idx):
         return self.point[idx]
