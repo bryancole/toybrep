@@ -209,7 +209,79 @@ class EdgeLoop(Loop):
         assert (start_vertex in verts) and (end_vertex in verts)
         
         e_new = EdgeCurve("", start_vertex, end_vertex, curve, sense)
-         
+        
+        l_new = EdgeLoop.__new__(EdgeLoop)
+        l_new.name = ""
+        l_new.base_edge = e_new
+        
+        edge_iter = self.edges()
+        pair = set(start_vertex, end_vertex)
+        
+        e1,o1 = edge_iter.next()
+        v1 = e1.end_vertex if o1 else e1.start_vertex
+        while v1 not in pair:
+            e1,o1 = edge_iter.next()
+            v1 = e1.end_vertex if o1 else e1.start_vertex
+            
+        e2, o2 = edge_iter.next()
+        if o2:
+            e2.right_loop = l_new
+        else:
+            e2.left_loop = l_new
+        
+        pair.remove(v1)
+        v_end = pair.pop()
+        
+        v2 = e2.end_vertex if o2 else e2.start_vertex
+        while v2 is not v_end:
+            e3, o3 = edge_iter.next()
+            if o3:
+                v2 = e3.end_vertex
+                e3.right_loop = l_new
+            else:
+                v2 = e3.start_vertex
+                e3.left_loop = l_new
+            
+        e4, o4 = edge_iter.next()
+        
+        if (v1,v2) == (start_vertex, end_vertex):
+            e_new.right_loop = self
+            e_new.left_loop = l_new
+            e_new.right_cc_edge = e1
+            e_new.right_cw_edge = e4
+            e_new.left_cw_edge = e2
+            e_new.left_cc_edge = e3
+        elif (v2,v1) == (start_vertex, end_vertex):
+            e_new.right_loop = l_new
+            e_new.left_loop = self
+            e_new.left_cc_edge = e1
+            e_new.left_cw_edge = e4
+            e_new.right_cw_edge = e2
+            e_new.right_cc_edge = e3
+        else:
+            raise TopologyError("extraced vertices don't match given ones")
+        
+        if o1:
+            e1.right_cw_edge = e_new
+        else:
+            e1.left_cw_edge = e_new
+            
+        if o2:
+            e2.right_cc_edge = e_new
+        else:
+            e2.left_cc_edge = e_new
+            
+        if o3:
+            e3.right_cw_edge = e_new
+        else:
+            e3.left_cw_edge = e_new
+            
+        if o4:
+            e4.right_cc_edge = e_new
+        else:
+            e4.left_cc_edge = e_new
+            
+        return l_new
         
     def copy_topology(self, memo):
         if self in memo:
@@ -230,17 +302,15 @@ class EdgeLoop(Loop):
             last = base_last = this.left_cc_edge
         while True:
             if this.right_cc_edge is last:
-                yield this, True
                 next = this.right_cw_edge
-                last = this
-                this = next
+                yield this, True
             elif this.left_cc_edge is last:
-                yield this, False
                 next = this.left_cw_edge
-                last = this
-                this = next
+                yield this, False
             else:
                 raise TopologyError("Edge loop incorrectly connected")
+            last = this
+            this = next
             if (this, last) == (base, base_last):
                 break
             
