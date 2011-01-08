@@ -358,7 +358,6 @@ class Vertex(ResolvedEntity):
     def __init__(self, name, point):
         self.name = name
         if not isinstance(point, CartesianPoint):
-            print "make point", type(point)
             self.point = CartesianPoint('', point)
         else:
             self.point = point
@@ -383,7 +382,8 @@ class Vertex(ResolvedEntity):
         elif base.start_vertex is self:
             last_loop = base_loop = base.left_loop
         else:
-            raise TopologyError("Incorrectly connected edges at vertex")
+            raise TopologyError("vertex base edge doesn't contain vertex")
+        
         while True:
             yield this
             if this.right_loop == last_loop:

@@ -45,8 +45,8 @@ class BlockTest(unittest.TestCase):
             loop = face.bounds.pop().bound
             for v in loop.vertices():
                 c[v]
+                self.assertTrue(len(list(v.edges())) == 3)
         self.assertTrue(all(n==3 for n in c.values()))
-        self.assertTrue(all(len(list(v.edges())) == 3 for v in loop.vertices()))
         
 
 class SubdividedBlockTest(unittest.TestCase):
