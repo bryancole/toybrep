@@ -215,7 +215,7 @@ class EdgeLoop(Loop):
         l_new.base_edge = e_new
         
         edge_iter = self.edges()
-        pair = set(start_vertex, end_vertex)
+        pair = set([start_vertex, end_vertex])
         
         e1,o1 = edge_iter.next()
         v1 = e1.end_vertex if o1 else e1.start_vertex

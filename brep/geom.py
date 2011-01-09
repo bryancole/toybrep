@@ -41,11 +41,16 @@ class Line(Curve):
     """A straight curve"""
     def __init__(self, name, origin, vector):
         self.name = name
-        self.origin = origin
-        self.vector = vector
+        self.origin = origin #a CartesianPoint
+        self.vector = vector #a Direction
         
     def tesselate(self, edge):
         pass
+    
+    @classmethod
+    def from_points(cls, p1, p2):
+        l = Line("", CartesianPoint("",p1), Direction("", p2-p1))
+        return l
         
 
 @step_type("CIRCLE")
