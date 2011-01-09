@@ -220,6 +220,7 @@ class EdgeLoop(Loop):
         e1,o1 = edge_iter.next()
         v1 = e1.end_vertex if o1 else e1.start_vertex
         while v1 not in pair:
+            print "find v1"
             e1,o1 = edge_iter.next()
             v1 = e1.end_vertex if o1 else e1.start_vertex
             
@@ -234,6 +235,7 @@ class EdgeLoop(Loop):
         
         v2 = e2.end_vertex if o2 else e2.start_vertex
         while v2 is not v_end:
+            print "find v2"
             e3, o3 = edge_iter.next()
             if o3:
                 v2 = e3.end_vertex
@@ -317,9 +319,9 @@ class EdgeLoop(Loop):
     def vertices(self):
         for e,o in self.edges():
             if o:
-                yield e.start_vertex
-            else:
                 yield e.end_vertex
+            else:
+                yield e.start_vertex
             
 
 @step_type("EGDE")

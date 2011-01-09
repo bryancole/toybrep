@@ -86,16 +86,21 @@ class SubdividedBlockTest(unittest.TestCase):
                 c[v]
         self.assertTrue(all(n in (3,2) for n in c.values()))
         
+
+class EdgeLoopTest(unittest.TestCase):
+    def setUp(self):
+        self.solid = load("block")
+        
     def test_divide_loops(self):
         s2 = self.solid.copy_topology()
-        faces = self.shell.faces
+        faces = s2.shell.faces
         for face in faces.copy():
             for b in face.bounds:
                 loop = b.bound
                 verts = list(loop.vertices())
                 v1,v2,v3,v4 = verts
                 line = geom.Line.from_points(v1.point, v2.point)
-                new_loop = loop.divide(v1,v3, line, loop.sense)
+                new_loop = loop.divide(v1,v3, line, True)
                 B = topo.FaceOuterBound("", new_loop, b.orientation)
                 new_face = topo.AdvancedFace("", set([B]), face.geometry, face.sense)
                 faces.add(new_face)
