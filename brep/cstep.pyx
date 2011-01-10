@@ -54,7 +54,8 @@ cdef class BaseEntity:
     
     
 cdef class ResolvedEntity(BaseEntity):
-    pass
+    def step_init(self, *args, **kwds):
+        self.__init__(*args, **kwds)
     
     
 cdef class CartesianPoint(ResolvedEntity):
@@ -208,7 +209,7 @@ def resolve(obj, data, free_set=None):
         data[eid] = inst
         
         try:
-            inst.__init__(*args)
+            inst.step_init(*args)
         except TypeError:
             del data[eid]
             raise TypeError("Error creating #%d = %s with args: %s"%(eid, str(cls), str(args)))

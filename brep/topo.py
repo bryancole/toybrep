@@ -193,6 +193,27 @@ class EdgeLoop(Loop):
             print tuple(oe.subedge.eid for oe in edge_list)
             raise
         
+    def join(self, other, start_vertex, end_vertex, curve, sense):
+        """
+        Make an edge between two loops, destroying the other loop as a result.
+        The caller must ensure the edge lies fully inside the owning face. 
+        This is not checked.
+        
+        other - an other loop in the same face
+        start_vertex, end_vertex - start and end vertices of the new edge.
+            Must be in different loops.
+        curve - geometry of the new edge
+        sense - orientation of the geometry
+        """
+        this_edges = list(self.edges())
+        this_verts = list(self.vertices())
+        other_edges = list(other.edges())
+        other_verts = list(other.vertices())
+        
+        assert ((start_vertex in this_verts) and (end_vertex in other_verts)) or \
+            ((end_vertex in this_verts) and (start_vertex in other_verts))
+        
+        
     def divide(self, start_vertex, end_vertex, curve, sense):
         """Creates a new edge between the given vertices
         to divide the loop in two. The new loop is returned.

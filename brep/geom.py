@@ -28,6 +28,9 @@ class Curve(ResolvedEntity):
     def tesselate(self, edge):
         pass
     
+    def tangent(self, point):
+        raise NotImplementedError
+    
     
 class Surface(ResolvedEntity):
     """ABC for 2D geometry"""
@@ -46,6 +49,10 @@ class Line(Curve):
         
     def tesselate(self, edge):
         pass
+    
+    def tangent(self, point):
+        return self.vector
+        
     
     @classmethod
     def from_points(cls, p1, p2):
