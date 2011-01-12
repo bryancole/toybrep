@@ -88,6 +88,7 @@ cdef class CartesianPoint(ResolvedEntity):
             raise IndexError("No index %s in CartesianPoint"%idx )
             
     def __add__(self, other):
+        cdef CartesianPoint ret
         other = aspoint(other)
         ret = CartesianPoint.__new__(CartesianPoint)
         ret.x = self.x + other.x
@@ -96,12 +97,29 @@ cdef class CartesianPoint(ResolvedEntity):
         return ret
         
     def __sub__(self, other):
+        cdef CartesianPoint ret
         other = aspoint(other)
         ret = CartesianPoint.__new__(CartesianPoint)
         ret.x = self.x - other.x
         ret.y = self.y - other.y
         ret.z = self.z - other.z
         return ret    
+    
+    def __mult__(self, double v):
+        cdef CartesianPoint ret
+        ret = CartesianPoint.__new__(CartesianPoint)
+        ret.x = self.x * v
+        ret.y = self.y * v
+        ret.z = self.z * v
+        return ret
+    
+    def __div__(self, double v):
+        cdef CartesianPoint ret
+        ret = CartesianPoint.__new__(CartesianPoint)
+        ret.x = self.x * v
+        ret.y = self.y * v
+        ret.z = self.z * v
+        return ret
         
     def dot(self, other):
         other = aspoint(other)
