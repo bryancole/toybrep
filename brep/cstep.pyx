@@ -20,6 +20,9 @@ cdef inline aspoint(obj):
         return obj
     return CartesianPoint(obj)
 
+def as_point(obj):
+    return aspoint(obj)
+
 
 def step_type(name):
     def wrapper(cls):
@@ -105,7 +108,7 @@ cdef class CartesianPoint(ResolvedEntity):
         ret.z = self.z - other.z
         return ret    
     
-    def __mult__(self, double v):
+    def __mul__(self, double v):
         cdef CartesianPoint ret
         ret = CartesianPoint.__new__(CartesianPoint)
         ret.x = self.x * v
@@ -141,6 +144,9 @@ cdef class CartesianPoint(ResolvedEntity):
         ret.y = self.y/mag
         ret.z = self.z/mag
         return ret
+    
+    def mag_sq(self):
+        return self.x*self.x + self.y*self.y + self.z*self.z
         
     def mag(self):
         return sqrt(self.x*self.x + self.y*self.y + self.z*self.z)

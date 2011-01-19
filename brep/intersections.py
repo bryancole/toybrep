@@ -22,6 +22,11 @@ def _point_point(p1, p2):
     
 def _point_line(p1, l2):
     """intersect point and line"""
+    dist = l2.vector.cross(l2.origin-p1).mag() / l2.vector.mag()
+    if dist < TOLGEO:
+        return p1
+    else:
+        return None
     
 def _point_circle(p1, c2):
     """intersect point and circle"""
@@ -31,6 +36,23 @@ def _point_nurbscurve(p1, n2):
     
 def _line_line(l1, l2):
     """intersection of two lines"""
+    #check coplanar...
+    a = l1.vector
+    b = l2.vector
+    c = l2.origin - l1.origin
+    ab = a.cross(b)
+    cp = c.dot(ab)
+    if cp >= TOLGEO:
+        return None
+    m = ab.mag_sq()
+    if m < TOLGEO:
+        if c.mag_sq() < TOLGEO:
+            return l1 #lines are colinear
+        else:
+            return None #lines are parallel but not colinear
+    s = c.cross(b).dot(ab) / m
+    intersection = l1.origin + l1.vector*s
+    return intersection
     
 def _line_circle(l1, c2):
     """intersect line and circle"""

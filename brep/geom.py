@@ -4,7 +4,7 @@ Created on 21 Dec 2010
 @author: bryan cole
 '''
 import pyximport; pyximport.install()
-from cstep import ResolvedEntity, entity_classes, CartesianPoint, Star, step_type, Direction
+from cstep import ResolvedEntity, entity_classes, CartesianPoint, Star, step_type, Direction, as_point
 from math import sqrt, cos, sin, pi, acos, asin, ceil
 from brep.transforms import Transform
 from brep.nurbs import NurbsCurve
