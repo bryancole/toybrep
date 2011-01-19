@@ -51,7 +51,7 @@ def _line_line(l1, l2):
         else:
             return None #lines are parallel but not colinear
     s = c.cross(b).dot(ab) / m
-    intersection = l1.origin + l1.vector*s
+    intersection = l1.origin + s*l1.vector
     return intersection
     
 def _line_circle(l1, c2):

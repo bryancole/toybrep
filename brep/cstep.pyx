@@ -108,20 +108,36 @@ cdef class CartesianPoint(ResolvedEntity):
         ret.z = self.z - other.z
         return ret    
     
-    def __mul__(self, double v):
-        cdef CartesianPoint ret
-        ret = CartesianPoint.__new__(CartesianPoint)
-        ret.x = self.x * v
-        ret.y = self.y * v
-        ret.z = self.z * v
+    def __mul__(a, b):
+        cdef:
+            CartesianPoint ret=CartesianPoint.__new__(CartesianPoint)
+            double o
+        if isinstance(a, CartesianPoint):
+            o=b
+            ret.x = a.x * o
+            ret.y = a.y * o
+            ret.z = a.z * o
+        elif isinstance(b, CartesianPoint):
+            o=a
+            ret.x = b.x * o
+            ret.y = b.y * o
+            ret.z = b.z * o
         return ret
     
-    def __div__(self, double v):
-        cdef CartesianPoint ret
-        ret = CartesianPoint.__new__(CartesianPoint)
-        ret.x = self.x * v
-        ret.y = self.y * v
-        ret.z = self.z * v
+    def __div__(a, b):
+        cdef:
+            CartesianPoint ret=CartesianPoint.__new__(CartesianPoint)
+            double o
+        if isinstance(a, CartesianPoint):
+            o=b
+            ret.x = a.x / o
+            ret.y = a.y / o
+            ret.z = a.z / o
+        elif isinstance(b, CartesianPoint): #not sure if this is useful
+            o=a
+            ret.x = o / b.x
+            ret.y = o / b.y
+            ret.z = o / b.z 
         return ret
         
     def dot(self, other):
