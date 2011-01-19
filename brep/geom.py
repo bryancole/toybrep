@@ -29,6 +29,11 @@ class Curve(ResolvedEntity):
         pass
     
     def tangent(self, point):
+        """Returns the tangent direction along the Curve
+        at the given point.
+        
+        Note, the point is assumed to lie on the curve. *this is not checked*
+        """
         raise NotImplementedError
     
     
@@ -37,6 +42,9 @@ class Surface(ResolvedEntity):
     def tesselate_face(self, face):
         #raise NotImplementedError
         pass
+    
+    def normal(self, point):
+        raise NotImplementedError
     
     
 @step_type("LINE")
@@ -67,6 +75,12 @@ class Circle(Curve):
         assert isinstance(position, Axis2Placement3D)
         self.position = position #a axis2_placement: usually an Axis2Placement3D
         self.radius = radius #a positive float
+        
+    def tangent(self, point):
+        axis = self.position.axis
+        centre = self.position.location
+        t = axis.cross(point - centre)
+        return Direction("", t)
         
     def tesselate(self, edge):
         start = edge.start_vertex.point
@@ -171,6 +185,9 @@ class Plane(Surface):
         
     def tesselate_face(self, face):
         pass
+    
+    def normal(self, point):
+        return self.axis2.axis
     
     
 @step_type("SPHERICAL_SURFACE")

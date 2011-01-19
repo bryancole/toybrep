@@ -108,6 +108,13 @@ cdef class CartesianPoint(ResolvedEntity):
         ret.z = self.z - other.z
         return ret    
     
+    def __neg__(self):
+        cdef CartesianPoint ret=CartesianPoint.__new__(CartesianPoint)
+        ret.x = -self.x
+        ret.y = -self.y
+        ret.z = -self.z
+        return ret
+    
     def __mul__(a, b):
         cdef:
             CartesianPoint ret=CartesianPoint.__new__(CartesianPoint)

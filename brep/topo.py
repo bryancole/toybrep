@@ -8,6 +8,13 @@ from cstep import ResolvedEntity, entity_classes, CartesianPoint, Star, step_typ
 from weakref import proxy, WeakSet
 
 from collections import defaultdict, deque
+from itertools import izip, tee
+
+
+def pairs(itr):
+    a,b = tee(itr)
+    b.next()
+    return izip(a,b)
 
 
 class TopologyError(Exception):
@@ -136,6 +143,29 @@ class AdvancedFace(ResolvedEntity):
         for bound in self.bounds:
             for vert in bound.bound.vertices():
                 yield vert
+                
+    def normal(self, point):
+        if self.sense:
+            return self.geometry.normal(point)
+        else:
+            return -self.geometry.normal(point)
+                
+    def concave(self): ###untested###
+        for bound in self.bounds:
+            loop = bound.bound
+            edges = list(loop.edges())
+            edges = [edges[-1]] + edges
+            edge_pairs = pairs(edges)
+            for (e1,o1),(e2,o2) in edge_pairs:
+                v1 = e1.end_vertex if o1 else e1.start_vertex
+                v2 = e2.start_vertex if o2 else e2.end_vertex
+                assert v1 is v2
+                p = v1.point
+                d1 = e1.tangent(p)
+                d2 = e2.tangent(p)
+                n = self.normal(p)
+                if d1.cross(d2).dot(n)<0:
+                    yield v1
         
         
 @step_type("FACE_BOUND")
@@ -343,6 +373,7 @@ class EdgeLoop(Loop):
                 yield e.end_vertex
             else:
                 yield e.start_vertex
+        
             
 
 @step_type("EGDE")
@@ -385,6 +416,12 @@ class EdgeCurve(Edge):
             start_vertex.edge = self
         if end_vertex.edge is None:
             end_vertex.edge = self
+            
+    def tangent(self, point):
+        if self.sense:
+            return self.curve.tangent(point)
+        else:
+            return -self.curve.tangent(point)
         
     def split(self, point):
         """Subdivide this edge at the given point.
